@@ -1,0 +1,12 @@
+{
+  "name": "feed-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend for Feed.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
