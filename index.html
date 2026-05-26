@@ -1,197 +1,25 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="bg-slate-950">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Feed</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>Feed — Connect Authentically</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #020617; /* Slate-950 */
+        margin: 0;
+        overflow-x: hidden;
+      }
+    </style>
   </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-logo">
-            <img src="assets/logo.jpeg" alt="Feed logo" onerror="this.hidden=true;this.nextElementSibling.hidden=false" />
-            <span hidden>F</span>
-          </div>
-          <div>
-            <strong>Feed</strong>
-            <small>Verified social intelligence</small>
-          </div>
-        </div>
-
-        <nav class="nav-list" aria-label="Main navigation">
-          <button class="nav-button active" data-view="home" type="button">Home</button>
-          <button class="nav-button" data-view="discover" type="button">Discover</button>
-          <button class="nav-button" data-view="pages" type="button">Pages</button>
-          <button class="nav-button" data-view="events" type="button">Events</button>
-          <button class="nav-button" data-view="notifications" type="button">Notifications <span id="notificationCount">0</span></button>
-          <button class="nav-button" data-view="profile" type="button">Profile</button>
-        </nav>
-
-        <button class="primary-action" id="openSignup" type="button">Create account</button>
-        <button class="secondary-action" id="focusComposer" type="button">New post</button>
-
-        <div class="mini-profile">
-          <div class="avatar" id="miniAvatar">GU</div>
-          <div>
-            <strong id="miniName">Guest User</strong>
-            <small id="miniHandle">@guest</small>
-          </div>
-        </div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Live network</p>
-            <h1 id="viewTitle">Home</h1>
-          </div>
-          <label class="search-box">
-            <span>Search</span>
-            <input id="searchInput" type="search" placeholder="Sports, policy, markets, entertainment..." />
-          </label>
-        </header>
-
-        <section class="layout">
-          <div class="center-column">
-            <section class="composer">
-              <div class="avatar" id="composerAvatar">GU</div>
-              <div class="composer-body">
-                <textarea id="postText" rows="3" placeholder="Share an update, opinion, report, statistic, or announcement..."></textarea>
-                <input id="postImage" type="url" placeholder="Optional image URL for a visual post" />
-                <div class="composer-tools">
-                  <select id="postArea" aria-label="Post area">
-                    <option>International Affairs</option>
-                    <option>Sports</option>
-                    <option>Entertainment</option>
-                    <option>Economics</option>
-                    <option>Resources</option>
-                    <option>Government</option>
-                  </select>
-                  <label><input id="restrictComments" type="checkbox" /> Restrict comments</label>
-                  <button class="primary-action compact" id="publishPost" type="button">Post</button>
-                </div>
-              </div>
-            </section>
-
-            <section id="homeView" class="view active-view">
-              <div id="storyRail" class="story-rail"></div>
-              <div class="topic-tabs">
-                <button class="topic-tab active" data-topic="All" type="button">For you</button>
-                <button class="topic-tab" data-topic="Sports" type="button">Sports</button>
-                <button class="topic-tab" data-topic="Economics" type="button">Economics</button>
-                <button class="topic-tab" data-topic="International Affairs" type="button">Affairs</button>
-                <button class="topic-tab" data-topic="Resources" type="button">Resources</button>
-              </div>
-              <div id="postList" class="stack"></div>
-            </section>
-
-            <section id="discoverView" class="view">
-              <div class="section-head">
-                <h2>Discover</h2>
-                <p>Fast lanes for useful public information.</p>
-              </div>
-              <div class="discover-grid">
-                <button data-search="transfer market">Transfer Market <span>38K posts</span></button>
-                <button data-search="inflation">Inflation Watch <span>21K posts</span></button>
-                <button data-search="public health">Public Health <span>14K posts</span></button>
-                <button data-search="energy resources">Energy Resources <span>18K posts</span></button>
-              </div>
-            </section>
-
-            <section id="pagesView" class="view">
-              <div class="section-head">
-                <h2>Verified pages</h2>
-                <p>Government sources, sports clubs, companies, sponsors, committees, and creators.</p>
-              </div>
-              <div id="pageList" class="stack"></div>
-            </section>
-
-            <section id="eventsView" class="view">
-              <div class="section-head">
-                <h2>Events</h2>
-                <p>Live events, updates, awareness campaigns, and ticket interest.</p>
-              </div>
-              <div id="eventList" class="stack"></div>
-            </section>
-
-            <section id="notificationsView" class="view">
-              <div class="section-head">
-                <h2>Notifications</h2>
-                <p>Announcements, followed-page activity, and event alerts.</p>
-              </div>
-              <div id="notificationList" class="stack"></div>
-            </section>
-
-            <section id="profileView" class="view">
-              <div class="profile-card">
-                <div class="profile-cover"></div>
-                <div class="profile-row">
-                  <div class="avatar large" id="profileAvatar">GU</div>
-                  <div class="profile-copy">
-                    <h2 id="profileName">Guest User</h2>
-                    <p id="profileBio">Create an account to personalize your Feed profile.</p>
-                  </div>
-                  <button class="secondary-action" id="editProfile" type="button">Edit profile</button>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <aside class="right-rail">
-            <section class="panel">
-              <h2>Project signals</h2>
-              <div class="metric-grid">
-                <div><strong id="postMetric">0</strong><span>Posts</span></div>
-                <div><strong id="pageMetric">0</strong><span>Pages</span></div>
-                <div><strong id="eventMetric">0</strong><span>Events</span></div>
-              </div>
-            </section>
-            <section class="panel">
-              <h2>Suggested follows</h2>
-              <div id="suggestedList" class="suggested-list"></div>
-            </section>
-          </aside>
-        </section>
-      </main>
-    </div>
-
-    <dialog id="signupDialog">
-      <form class="modal" id="signupForm" method="dialog">
-        <div class="modal-head">
-          <h2>Create Feed account</h2>
-          <button type="submit" value="cancel">Close</button>
-        </div>
-        <input id="signupName" required placeholder="Full name" value="Ari Johnson" />
-        <input id="signupHandle" required placeholder="Handle" value="ari_feed" />
-        <input id="signupDob" required type="date" value="2000-01-01" />
-        <input id="signupEmail" required type="email" placeholder="Email address" value="ari@example.com" />
-        <input id="signupPhone" required type="tel" placeholder="Phone number" value="+2348012345678" />
-        <button class="secondary-action" id="requestCode" type="button">Send email and phone codes</button>
-        <input id="emailCode" placeholder="Email verification code" />
-        <input id="phoneCode" placeholder="Phone verification code" />
-        <input id="signupPassword" required minlength="8" type="password" placeholder="Password" value="feedpassword" />
-        <input id="signupWallpaper" type="url" placeholder="Optional profile wallpaper URL" />
-        <p id="signupNote" class="form-note"></p>
-        <button class="primary-action" type="submit">Finish setup</button>
-      </form>
-    </dialog>
-
-    <dialog id="profileDialog">
-      <form class="modal" id="profileForm" method="dialog">
-        <div class="modal-head">
-          <h2>Edit profile</h2>
-          <button type="submit" value="cancel">Close</button>
-        </div>
-        <input id="nameInput" placeholder="Name" />
-        <input id="avatarInput" maxlength="2" placeholder="Initials" />
-        <input id="wallpaperInput" type="url" placeholder="Wallpaper URL" />
-        <textarea id="bioInput" rows="4" placeholder="Bio"></textarea>
-        <button class="primary-action" type="submit">Save profile</button>
-      </form>
-    </dialog>
-
-    <script src="app.js"></script>
+  <body class="text-slate-100 antialiased selection:bg-blue-500/30 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
