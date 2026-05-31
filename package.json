@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build"
-    "postinstall": "chmod +x node_modules/.bin/vite || true"
   },
   "dependencies": {
     "esbuild": "^0.28.0",
