@@ -1,14 +1,14 @@
 import api from "./axios";
 
-export const sendGift = (
-  liveId,
-  giftId
-) => {
-  return api.post(
-    "/gifts/send",
-    {
+// Send a gift during a live session
+export const sendGift = async (liveId, giftId) => {
+  try {
+    const response = await api.post("/gifts/send", {
       liveId,
       giftId,
-    }
-  );
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
 };

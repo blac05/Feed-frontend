@@ -1,42 +1,81 @@
-import api from "../src/Api/axios";
+import api from "../Api/axios";
 
-export const getReels = () =>
-  api.get("/videos/feed");
+// Fetch the video feed
+export const getReels = async () => {
+  try {
+    const response = await api.get("/videos/feed");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reels:", error);
+    throw error;
+  }
+};
 
-export const uploadReel = data =>
-  api.post("/videos", data);
+// Upload a new reel/video
+export const uploadReel = async (data) => {
+  try {
+    const response = await api.post("/videos", data);
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading reel:", error);
+    throw error;
+  }
+};
 
-export const likeVideo = videoId =>
-  api.post("/video-likes", {
-    videoId,
-  });
+// Like a video
+export const likeVideo = async (videoId) => {
+  try {
+    const response = await api.post("/video-likes", { videoId });
+    return response.data;
+  } catch (error) {
+    console.error(`Error liking video ${videoId}:`, error);
+    throw error;
+  }
+};
 
-export const getVideoLikes =
-  videoId =>
-    api.get(
-      `/video-likes/${videoId}`
-    );
+// Get likes for a specific video
+export const getVideoLikes = async (videoId) => {
+  try {
+    const response = await api.get(`/video-likes/${videoId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching likes for video ${videoId}:`, error);
+    throw error;
+  }
+};
 
-export const getComments =
-  videoId =>
-    api.get(
-      `/video-comments/${videoId}`
-    );
+// Get comments for a specific video
+export const getComments = async (videoId) => {
+  try {
+    const response = await api.get(`/video-comments/${videoId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching comments for video ${videoId}:`, error);
+    throw error;
+  }
+};
 
-export const addComment = (
-  videoId,
-  text
-) =>
-  api.post(
-    "/video-comments",
-    {
+// Add a comment to a video
+export const addComment = async (videoId, text) => {
+  try {
+    const response = await api.post("/video-comments", {
       videoId,
       text,
-    }
-  );
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error adding comment to video ${videoId}:`, error);
+    throw error;
+  }
+};
 
-export const deleteComment =
-  commentId =>
-    api.delete(
-      `/video-comments/${commentId}`
-    );
+// Delete a comment by ID
+export const deleteComment = async (commentId) => {
+  try {
+    const response = await api.delete(`/video-comments/${commentId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting comment ${commentId}:`, error);
+    throw error;
+  }
+};

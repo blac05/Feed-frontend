@@ -1,41 +1,33 @@
-export default function CommunityFeed({
-  posts,
-}) {
+export default function CommunityFeed({ posts }) {
   return (
     <div className="space-y-5">
-
-      {posts.map(post => (
+      {posts.map((post) => (
         <div
           key={post._id}
           className="
-          bg-white
-          rounded-2xl
-          shadow
-          p-5
+            bg-white
+            rounded-2xl
+            shadow
+            p-5
+            hover:shadow-lg
+            transition
           "
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-4">
             <img
-              src={post.author?.avatar}
-              alt=""
-              className="
-              w-10
-              h-10
-              rounded-full
-              "
+              src={post.author?.avatar || "https://via.placeholder.com/40"}
+              alt={`${post.author?.username || "User"} avatar`}
+              className="w-10 h-10 rounded-full object-cover"
             />
 
             <span className="font-semibold">
-              {post.author?.username}
+              {post.author?.username || "Anonymous"}
             </span>
           </div>
 
-          <p className="mt-4">
-            {post.content}
-          </p>
+          <p className="text-gray-800">{post.content}</p>
         </div>
       ))}
-
     </div>
   );
 }

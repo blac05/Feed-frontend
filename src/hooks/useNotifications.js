@@ -1,20 +1,16 @@
-import { useEffect } from "react";
-import socket from "./useSocket";
+import useNotifications from './path/to/useNotifications';
 
-export default function useNotifications(
-  callback
-) {
-  useEffect(() => {
-    socket.on(
-      "notification",
-      callback
-    );
+function NotificationsComponent() {
+  const handleNotification = (notificationData) => {
+    // handle the notification
+    console.log('Received notification:', notificationData);
+  };
 
-    return () => {
-      socket.off(
-        "notification",
-        callback
-      );
-    };
-  }, [callback]);
+  useNotifications(handleNotification);
+
+  return (
+    <div>
+      {/* Your UI */}
+    </div>
+  );
 }
