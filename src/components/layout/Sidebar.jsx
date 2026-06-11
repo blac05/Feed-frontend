@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { Link, useLocation } from "react-router-dom";
-import logo from "../assets/logo.png";
+import logo from "../../assets/logo.png";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
