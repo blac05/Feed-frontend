@@ -1,6 +1,5 @@
 import axios from "./axios";
 
-// Fetch all posts
 export const getPosts = async () => {
   try {
     const response = await axios.get("/posts");
@@ -10,7 +9,6 @@ export const getPosts = async () => {
   }
 };
 
-// Create a new post
 export const createPost = async (data) => {
   try {
     const response = await axios.post("/posts", data);
@@ -20,7 +18,6 @@ export const createPost = async (data) => {
   }
 };
 
-// Delete a post by ID
 export const deletePost = async (id) => {
   try {
     const response = await axios.delete(`/posts/${id}`);

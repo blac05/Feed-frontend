@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import StatsCards from "../components/admin/StatsCards";
+import StatsCards from "../components/admin/Statscards";
 
 export default function PlatformAnalytics() {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });

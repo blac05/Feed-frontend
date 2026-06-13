@@ -1,5 +1,5 @@
 import Layout from "../components/layout/Layout";
-import ForYouFeed from "../src/components/recommendations/ForYouFeed";
+import ForYouFeed from "../components/reccomendations/ForYouFeed";
 
 export default function ForYou() {
   return (
