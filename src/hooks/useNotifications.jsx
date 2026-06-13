@@ -1,16 +1,11 @@
-import useNotifications from './path/to/useNotifications';
+import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
-function NotificationsComponent() {
-  const handleNotification = (notificationData) => {
-    // handle the notification
-    console.log('Received notification:', notificationData);
-  };
+export default function useNotifications(handler) {
+  const { user } = useAuth();
 
-  useNotifications(handleNotification);
-
-  return (
-    <div>
-      {/* Your UI */}
-    </div>
-  );
+  useEffect(() => {
+    if (!user) return;
+    // Socket or polling logic can be wired here later
+  }, [user]);
 }
