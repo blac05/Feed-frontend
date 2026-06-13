@@ -1,4 +1,5 @@
-import StatsCards from "../components/admin/StatsCards";
+import StatsCards from "../components/admin/Statscards";
+
 
 export default function AdminDashboard() {
   return (

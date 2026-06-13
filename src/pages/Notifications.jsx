@@ -1,5 +1,5 @@
 // Notifications.js
-import Layout from "../src/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import { useState, useEffect } from "react";
 import useNotifications from "../hooks/useNotifications";
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Layout from "../src/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import StoryCard from "../components/stories/StoryCard";
 import StoryViewer from "../components/stories/StoryViewer";
 import api from "../api/axios";

@@ -1,4 +1,4 @@
-import Layout from "../src/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import ProductGrid from "../components/marketplace/ProductGrid";
 import Particles from "react-tsparticles";
 

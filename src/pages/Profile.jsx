@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import Layout from "../src/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import api from "../api/axios";
 

@@ -1,4 +1,4 @@
-import Layout from "../src/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import ForYouFeed from "../src/components/recommendations/ForYouFeed";
 
 export default function ForYou() {
