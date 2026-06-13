@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../Api/axios";
+import api from "../api/axios";
 import Particles from "react-tsparticles";
 
 export default function Login() {

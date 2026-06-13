@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { sendGift } from "../../Api/giftApi";
+import { sendGift } from "../../api/giftApi";
 
 const gifts = [
   { emoji: "🌹", id: 1 },

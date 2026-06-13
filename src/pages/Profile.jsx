@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import Layout from "../src/components/layout/Layout";
 import ProfileHeader from "../components/profile/ProfileHeader";
-import api from "../Api/axios";
+import api from "../api/axios";
 
 export default function Profile() {
   const [user, setUser] = useState(null);

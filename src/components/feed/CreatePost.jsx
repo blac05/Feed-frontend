@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../../Api/axios";
+import api from "../../api/axios";
 
 export default function CreatePost() {
   const [content, setContent] = useState("");
