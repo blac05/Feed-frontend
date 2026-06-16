@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+import Landing from "../pages/Landing";
 import AdminDashboard from "../pages/AdminDashboard";
 import AdsManager from "../pages/AdsManager";
 import AIStudio from "../pages/AIStudio";
@@ -47,14 +48,17 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Home />} />
+      {/* Auth / Landing */}
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
+      {/* Main Feed */}
+      <Route path="/home" element={<Home />} />
       <Route path="/explore" element={<Explore />} />
       <Route path="/for-you" element={<ForYou />} />
 
-      {/* User Routes */}
+      {/* User */}
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/messages" element={<Messages />} />
