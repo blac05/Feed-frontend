@@ -1,6 +1,5 @@
 import { useState } from "react";
 import api from "../api/axios";
-import Particles from "react-tsparticles";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,40 +24,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 relative overflow-hidden">
 
-      {/* Particles background */}
-      <Particles
-        id="tsparticles"
-        options={{
-          fullScreen: { enable: false },
-          particles: {
-            number: { value: 50 },
-            color: { value: "#ffffff" },
-            shape: { type: "circle" },
-            opacity: { value: 0.2, random: true },
-            size: { value: 3, random: true },
-            move: {
-              enable: true,
-              speed: 1,
-              direction: "none",
-              random: true,
-              straight: false,
-              outMode: "out",
-            },
-          },
-          interactivity: {
-            detectsOn: "canvas",
-            events: {
-              onHover: { enable: true, mode: "repulse" },
-              onClick: { enable: true, mode: "push" },
-            },
-            modes: {
-              repulse: { distance: 100, duration: 0.4 },
-              push: { particles_nb: 4 },
-            },
-          },
-        }}
-        className="absolute inset-0"
-      />
+      
 
       {/* Login form with animations */}
       <form
