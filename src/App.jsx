@@ -1,35 +1,60 @@
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
-import Navbar from "./components/layout/Navbar";
-import Sidebar from "./components/layout/Sidebar";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
+import Sidebar from "./components/layout/Sidebar";
+import RightPanel from "./components/layout/RightPanel";
 import SplashScreen from "./components/SplashScreen";
+import { useAuth } from "./context/AuthContext";
 
 const AUTH_PAGES = ["/", "/login", "/register"];
 
 export default function App() {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
+  const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isAuthPage = AUTH_PAGES.includes(location.pathname);
-  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
+  useEffect(() => {
+    if (!loading && !splashDone) return;
+    if (!loading && !user && !isAuthPage) {
+      navigate("/");
+    }
+    if (!loading && user && isAuthPage) {
+      navigate("/home");
+    }
+  }, [user, loading, isAuthPage]);
+
+  if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (isAuthPage) {
+    return <AppRoutes />;
+  }
 
   return (
-    <>
-      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
-
-      {splashDone && (
-        <div className={isAuthPage ? "" : "flex min-h-screen bg-slate-50"}>
-          {!isAuthPage && <Sidebar isOpen={isSidebarOpen} />}
-          <div className="flex-1 flex flex-col">
-            {!isAuthPage && <Navbar onToggleSidebar={toggleSidebar} />}
-            <main className={isAuthPage ? "" : "flex-1 p-4"}>
-              <AppRoutes />
-            </main>
-          </div>
+    <div className="min-h-screen bg-[#f7f9f9] flex justify-center">
+      <div className="flex w-full max-w-7xl">
+        {/* Left Sidebar */}
+        <div className="hidden md:flex flex-col w-64 xl:w-72 sticky top-0 h-screen">
+          <Sidebar />
         </div>
-      )}
-    </>
+
+        {/* Main Feed */}
+        <main className="flex-1 min-h-screen border-x border-gray-200 bg-white max-w-2xl">
+          <AppRoutes />
+        </main>
+
+        {/* Right Panel */}
+        <div className="hidden lg:flex flex-col w-80 xl:w-96 sticky top-0 h-screen p-4">
+          <RightPanel />
+        </div>
+      </div>
+    </div>
   );
 }

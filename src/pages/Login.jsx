@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../api/axios";
 import logo from "../assets/logo.png";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -17,10 +19,10 @@ export default function Login() {
     setError("");
     try {
       const res = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
+      login(res.data.token, res.data.user);
       navigate("/home");
     } catch (err) {
-      setError("Login failed. Please check your credentials.");
+      setError("Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -31,10 +33,8 @@ export default function Login() {
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
         className="w-full max-w-sm"
       >
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <img src={logo} alt="Feed" className="w-16 h-16 rounded-2xl shadow mb-3" />
           <h1 className="text-3xl font-extrabold text-blue-900">Welcome back</h1>
@@ -52,7 +52,7 @@ export default function Login() {
             placeholder="Email"
             className="w-full border border-gray-200 bg-gray-50 text-gray-800 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
             type="email"
             required
           />
@@ -61,13 +61,13 @@ export default function Login() {
             placeholder="Password"
             className="w-full border border-gray-200 bg-gray-50 text-gray-800 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
             required
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-sky-500 to-blue-700 text-white py-3.5 rounded-2xl font-bold text-lg shadow hover:brightness-110 transition mt-1"
+            className="w-full bg-gradient-to-r from-sky-500 to-blue-700 text-white py-3.5 rounded-2xl font-bold text-lg shadow hover:brightness-110 transition mt-1 disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Log In"}
           </button>
@@ -75,15 +75,10 @@ export default function Login() {
 
         <p className="text-center text-gray-400 text-sm mt-6">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
-            Sign up
-          </Link>
+          <Link to="/register" className="text-blue-600 font-semibold hover:underline">Sign up</Link>
         </p>
-
         <p className="text-center mt-3">
-          <Link to="/" className="text-gray-300 text-xs hover:text-gray-400">
-            ← Back to home
-          </Link>
+          <Link to="/" className="text-gray-300 text-xs hover:text-gray-400">← Back to home</Link>
         </p>
       </motion.div>
     </div>

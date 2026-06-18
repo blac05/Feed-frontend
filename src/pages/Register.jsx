@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import logo from "../assets/logo.png";
 
@@ -20,6 +21,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -28,7 +30,7 @@ export default function Register() {
     setError("");
     try {
       const res = await api.post("/auth/register", form);
-      localStorage.setItem("token", res.data.token);
+      login(res.data.token, res.data.user);
       navigate("/home");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed.");

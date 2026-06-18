@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 import Landing from "../pages/Landing";
@@ -83,7 +83,8 @@ function AppRoutes() {
 
       {/* Marketplace */}
       <Route path="/marketplace" element={<Marketplace />} />
-      <Route path="/product/:id" element={<ProductDetails />} />
+      <Route path="/profile/me" element={<Profile />} />
+      <Route path="/profile/:id" element={<Profile />} />
       <Route path="/checkout" element={<Checkout />} />
 
       {/* Creator */}
