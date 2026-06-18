@@ -266,26 +266,22 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Sticky Header Tabs */}
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="flex">
-          {tabs.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-4 text-sm font-semibold transition relative ${
-                activeTab === tab ? "text-gray-900" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {tab}
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="tab-indicator"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-600 rounded-full"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+  <div className="flex">
+    {tabs.map(tab => (
+      <button
+        key={tab}
+        onClick={() => setActiveTab(tab)}
+        className={`flex-1 py-4 text-sm font-semibold transition relative border-b-2 ${
+          activeTab === tab
+            ? "text-gray-900 border-blue-600"
+            : "text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50"
+        }`}
+      >
+        {tab}
+      </button>
+    ))}
+  </div>
+</div>
 
       {/* Create Post */}
       <div className="bg-white border-b border-gray-100 px-4 py-3">
