@@ -7,6 +7,7 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
+import useUpload from "../hooks/useUpload";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -29,6 +30,9 @@ export default function Profile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isOwnProfile = id === "me" || id === authUser?._id;
+
+  // ✅ useUpload correctly inside component
+  const { uploadAvatar, uploadImage, uploading: uploadingMedia } = useUpload();
 
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -60,7 +64,6 @@ export default function Profile() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
-    // Fetch user posts
     api.get("/posts")
       .then(res => {
         const uid = isOwnProfile ? authUser?._id : id;
@@ -69,37 +72,43 @@ export default function Profile() {
       .catch(() => {});
   }, [id]);
 
+  // ✅ Cloudinary avatar upload
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Show preview immediately
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
-      setAvatar(base64);
+    reader.onloadend = () => setAvatar(reader.result);
+    reader.readAsDataURL(file);
+    // Upload to Cloudinary
+    const url = await uploadAvatar(file);
+    if (url) {
+      setAvatar(url);
       try {
-        const res = await api.put("/users/me", { avatar: base64 });
+        const res = await api.put("/users/me", { avatar: url });
         setAuthUser(res.data.user);
       } catch (err) {
         console.error(err);
       }
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
+  // ✅ Cloudinary cover upload
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
-      setCover(base64);
+    reader.onloadend = () => setCover(reader.result);
+    reader.readAsDataURL(file);
+    const url = await uploadImage(file);
+    if (url) {
+      setCover(url);
       try {
-        await api.put("/users/me", { coverImage: base64 });
+        await api.put("/users/me", { coverImage: url });
       } catch (err) {
         console.error(err);
       }
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const saveProfile = async () => {
@@ -118,7 +127,6 @@ export default function Profile() {
 
   if (loading) return (
     <div className="min-h-screen">
-      {/* Skeleton */}
       <div className="h-40 bg-gray-200 animate-pulse" />
       <div className="px-4 pb-4">
         <div className="w-24 h-24 bg-gray-300 rounded-full -mt-12 border-4 border-white animate-pulse" />
@@ -141,7 +149,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Sticky top bar */}
+      {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-gray-100 transition">
           <ArrowLeft size={20} className="text-gray-700" />
@@ -152,9 +160,14 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Cover Image */}
+      {/* Cover */}
       <div className="relative h-40 bg-gradient-to-r from-sky-400 to-blue-700 group">
         {cover && <img src={cover} className="w-full h-full object-cover" alt="cover" />}
+        {uploadingMedia && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
         {isOwnProfile && (
           <button
             onClick={() => coverRef.current.click()}
@@ -169,7 +182,6 @@ export default function Profile() {
       {/* Profile Info */}
       <div className="px-4 pb-4">
         <div className="flex items-end justify-between -mt-12 mb-3">
-          {/* Avatar */}
           <div className="relative group">
             <img
               src={avatar || `https://ui-avatars.com/api/?name=${user.username}&background=2563eb&color=fff&size=200`}
@@ -187,7 +199,6 @@ export default function Profile() {
             <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           </div>
 
-          {/* Edit / Follow Button */}
           {isOwnProfile ? (
             <button
               onClick={() => setShowEditModal(true)}
@@ -202,7 +213,6 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Name + Verification */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <h1 className="text-xl font-extrabold text-gray-900">{user.name || user.username}</h1>
           {user.isVerified && (
@@ -211,19 +221,14 @@ export default function Profile() {
         </div>
         <p className="text-gray-400 text-sm">@{user.username}</p>
 
-        {/* Account Type Badge */}
         {user.accountType && user.accountType !== "personal" && (
           <span className="inline-block mt-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
             {accountTypeLabel[user.accountType]}
           </span>
         )}
 
-        {/* Bio */}
-        {user.bio && (
-          <p className="text-gray-700 text-sm mt-2 leading-relaxed">{user.bio}</p>
-        )}
+        {user.bio && <p className="text-gray-700 text-sm mt-2 leading-relaxed">{user.bio}</p>}
 
-        {/* Meta info */}
         <div className="flex flex-wrap gap-3 mt-2">
           {user.location && (
             <span className="flex items-center gap-1 text-gray-400 text-sm">
@@ -231,21 +236,15 @@ export default function Profile() {
             </span>
           )}
           {user.website && (
-  <a
-    href={user.website}
-    target="_blank"
-    rel="noreferrer"
-    className="flex items-center gap-1 text-blue-500 text-sm hover:underline"
-  >
-    <Link2 size={14} /> {user.website}
-  </a>
-)}
+            <a href={user.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-500 text-sm hover:underline">
+              <Link2 size={14} /> {user.website}
+            </a>
+          )}
           <span className="flex items-center gap-1 text-gray-400 text-sm">
             <Calendar size={14} /> Joined {joinedDate}
           </span>
         </div>
 
-        {/* Stats */}
         <div className="flex gap-5 mt-3">
           <button className="text-sm hover:underline">
             <span className="font-bold text-gray-900">{user.following?.length || 0}</span>
@@ -279,7 +278,6 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* Posts */}
       {tab === "posts" && (
         posts.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -308,7 +306,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Edit Profile Modal */}
+      {/* Edit Modal */}
       <AnimatePresence>
         {showEditModal && (
           <motion.div
@@ -323,7 +321,6 @@ export default function Profile() {
               exit={{ scale: 0.95, y: 20 }}
               className="bg-white rounded-2xl w-full max-w-md overflow-hidden"
             >
-              {/* Modal Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center gap-4">
                   <button onClick={() => setShowEditModal(false)} className="p-1 rounded-full hover:bg-gray-100 transition">
@@ -339,8 +336,6 @@ export default function Profile() {
                   {saving ? "Saving..." : "Save"}
                 </button>
               </div>
-
-              {/* Modal Body */}
               <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
                 {[
                   { key: "name", label: "Name", placeholder: "Your name" },
