@@ -1,35 +1,223 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Image, Video, Smile, Send, Heart, MessageCircle, Repeat2, Share, MoreHorizontal, CheckCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Image, Video, Smile, Send, Heart, MessageCircle,
+  Repeat2, Share2, MoreHorizontal, CheckCircle, X
+} from "lucide-react";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
-const verifiedBadge = (user) => {
-  if (!user?.isVerified) return null;
-  const colors = {
-    personal: "text-blue-500",
-    creator: "text-purple-500",
-    company: "text-blue-700",
-    prominent: "text-yellow-500",
-    popstar: "text-pink-500",
-  };
-  return <CheckCircle size={14} className={`inline ml-1 ${colors[user.accountType] || "text-blue-500"}`} />;
+const badgeColor = {
+  personal: "text-blue-500",
+  creator: "text-purple-500",
+  company: "text-blue-700",
+  prominent: "text-yellow-500",
+  popstar: "text-pink-500",
 };
+
+function VerifiedBadge({ user }) {
+  if (!user?.isVerified) return null;
+  return <CheckCircle size={13} className={`inline ml-0.5 ${badgeColor[user.accountType] || "text-blue-500"}`} />;
+}
+
+function PostSkeleton() {
+  return (
+    <div className="bg-white border-b border-gray-100 p-4 animate-pulse">
+      <div className="flex gap-3">
+        <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 bg-gray-200 rounded w-1/3" />
+          <div className="h-3 bg-gray-200 rounded w-full" />
+          <div className="h-3 bg-gray-200 rounded w-3/4" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PostCard({ post, onLike, currentUserId }) {
+  const [showComments, setShowComments] = useState(false);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [localPost, setLocalPost] = useState(post);
+  const liked = localPost.likes?.includes(currentUserId);
+
+  const handleLike = async () => {
+    onLike(localPost._id);
+    setLocalPost(prev => ({
+      ...prev,
+      likes: liked
+        ? prev.likes.filter(id => id !== currentUserId)
+        : [...(prev.likes || []), currentUserId]
+    }));
+  };
+
+  const submitComment = async () => {
+    if (!comment.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await api.post(`/posts/${localPost._id}/comment`, { text: comment });
+      setLocalPost(res.data.post);
+      setComment("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const timeAgo = (date) => {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+    return new Date(date).toLocaleDateString();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white border-b border-gray-100 px-4 py-3 hover:bg-gray-50/50 transition"
+    >
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <img
+          src={localPost.author?.avatar || `https://ui-avatars.com/api/?name=${localPost.author?.username}&background=2563eb&color=fff`}
+          className="w-10 h-10 rounded-full object-cover flex-shrink-0 mt-0.5"
+          alt="avatar"
+        />
+
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="font-bold text-sm text-gray-900">
+                {localPost.author?.name || localPost.author?.username}
+              </span>
+              <VerifiedBadge user={localPost.author} />
+              <span className="text-gray-400 text-sm">@{localPost.author?.username}</span>
+              <span className="text-gray-300 text-sm">·</span>
+              <span className="text-gray-400 text-xs">{timeAgo(localPost.createdAt)}</span>
+            </div>
+            <button className="text-gray-300 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100 transition">
+              <MoreHorizontal size={16} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <p className="text-gray-800 text-sm leading-relaxed mt-1 whitespace-pre-wrap">{localPost.content}</p>
+
+          {/* Image */}
+          {localPost.image && (
+            <img
+              src={localPost.image}
+              className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100"
+              alt="post"
+            />
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-between mt-3 -ml-2">
+            {/* Like */}
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm transition group ${
+                liked ? "text-red-500" : "text-gray-400 hover:text-red-500"
+              }`}
+            >
+              <Heart
+                size={17}
+                className={`transition group-hover:scale-110 ${liked ? "fill-red-500" : ""}`}
+              />
+              <span className="text-xs">{localPost.likes?.length || 0}</span>
+            </button>
+
+            {/* Comment */}
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group"
+            >
+              <MessageCircle size={17} className="group-hover:scale-110 transition" />
+              <span className="text-xs">{localPost.comments?.length || 0}</span>
+            </button>
+
+            {/* Repost */}
+            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-green-500 transition group">
+              <Repeat2 size={17} className="group-hover:scale-110 transition" />
+              <span className="text-xs">{localPost.reposts?.length || 0}</span>
+            </button>
+
+            {/* Share */}
+            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group">
+              <Share2 size={17} className="group-hover:scale-110 transition" />
+            </button>
+          </div>
+
+          {/* Comments Section */}
+          <AnimatePresence>
+            {showComments && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 border-t border-gray-100 pt-3 space-y-3"
+              >
+                {localPost.comments?.map((c, i) => (
+                  <div key={i} className="flex gap-2">
+                    <img
+                      src={c.user?.avatar || `https://ui-avatars.com/api/?name=${c.user?.username}&background=2563eb&color=fff`}
+                      className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                      alt="avatar"
+                    />
+                    <div className="bg-gray-100 rounded-2xl px-3 py-2 flex-1">
+                      <p className="text-xs font-semibold text-gray-800">{c.user?.username}</p>
+                      <p className="text-xs text-gray-600">{c.text}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <input
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && submitComment()}
+                    placeholder="Write a comment..."
+                    className="flex-1 bg-gray-100 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    onClick={submitComment}
+                    disabled={submitting || !comment.trim()}
+                    className="bg-blue-600 text-white px-3 py-2 rounded-2xl text-xs font-semibold disabled:opacity-40 hover:bg-blue-700 transition"
+                  >
+                    {submitting ? "..." : "Send"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 const tabs = ["For You", "Following", "News", "Trending"];
 
 export default function Home() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [posting, setPosting] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("For You");
   const [image, setImage] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const fileRef = useRef();
+  const textRef = useRef();
 
   useEffect(() => {
-    api.get("/users/me").then(res => setUser(res.data.user)).catch(() => {});
     fetchPosts();
-  }, []);
+  }, [activeTab]);
 
   const fetchPosts = async () => {
     setFetching(true);
@@ -53,198 +241,147 @@ export default function Home() {
 
   const submit = async () => {
     if (!text.trim()) return;
-    setLoading(true);
+    setPosting(true);
     try {
       const res = await api.post("/posts", { content: text, image });
       setPosts(prev => [res.data.post, ...prev]);
       setText("");
       setImage(null);
+      setExpanded(false);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setPosting(false);
     }
   };
 
-  const likePost = async (id) => {
+  const handleLike = async (id) => {
     try {
       await api.put(`/posts/${id}/like`);
-      setPosts(prev => prev.map(p =>
-        p._id === id
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes.slice(0, -1) : [...p.likes, "me"] }
-          : p
-      ));
     } catch (err) {
       console.error(err);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-4 px-4 space-y-4">
-      {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <div className="min-h-screen">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex">
           {tabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 text-sm font-semibold transition ${
-                activeTab === tab
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
+              className={`flex-1 py-4 text-sm font-semibold transition relative ${
+                activeTab === tab ? "text-gray-900" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
               }`}
             >
               {tab}
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-600 rounded-full"
+                />
+              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* Create Post */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
-      >
-        <div className="flex gap-3 items-start">
+      <div className="bg-white border-b border-gray-100 px-4 py-3">
+        <div className="flex gap-3">
           <img
-            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=2563eb&color=fff`}
+            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=2563eb&color=fff`}
             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
             alt="avatar"
           />
-          <textarea
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="What's happening?"
-            className="flex-1 resize-none outline-none text-gray-700 placeholder-gray-400 text-sm pt-1"
-            rows={2}
-          />
-        </div>
+          <div className="flex-1">
+            <textarea
+              ref={textRef}
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onFocus={() => setExpanded(true)}
+              placeholder="What's happening?"
+              className="w-full resize-none outline-none text-gray-800 placeholder-gray-400 text-[15px] bg-transparent"
+              rows={expanded ? 3 : 1}
+            />
 
-        {image && (
-          <div className="relative mt-3">
-            <img src={image} className="rounded-xl w-full max-h-60 object-cover" alt="preview" />
-            <button
-              onClick={() => setImage(null)}
-              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-            >×</button>
-          </div>
-        )}
+            {image && (
+              <div className="relative mt-2">
+                <img src={image} className="rounded-2xl w-full max-h-60 object-cover border border-gray-100" alt="preview" />
+                <button
+                  onClick={() => setImage(null)}
+                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-          <div className="flex gap-2">
-            <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 px-3 py-1.5 rounded-lg transition cursor-pointer">
-              <Image size={16} /> Photo
-              <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
-            </label>
-            <button className="flex items-center gap-1.5 text-purple-500 text-sm font-medium hover:bg-purple-50 px-3 py-1.5 rounded-lg transition">
-              <Video size={16} /> Video
-            </button>
-            <button className="flex items-center gap-1.5 text-yellow-500 text-sm font-medium hover:bg-yellow-50 px-3 py-1.5 rounded-lg transition">
-              <Smile size={16} /> Feeling
-            </button>
+            <AnimatePresence>
+              {expanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100"
+                >
+                  <div className="flex gap-1">
+                    <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition cursor-pointer">
+                      <Image size={18} />
+                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
+                    </label>
+                    <button className="text-blue-500 hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition">
+                      <Video size={18} />
+                    </button>
+                    <button className="text-blue-500 hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition">
+                      <Smile size={18} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {text.length > 0 && (
+                      <span className={`text-xs font-medium ${text.length > 260 ? "text-red-500" : "text-gray-400"}`}>
+                        {280 - text.length}
+                      </span>
+                    )}
+                    <button
+                      onClick={submit}
+                      disabled={posting || !text.trim() || text.length > 280}
+                      className="bg-gradient-to-r from-sky-500 to-blue-700 text-white px-5 py-2 rounded-full text-sm font-bold disabled:opacity-40 hover:brightness-110 transition"
+                    >
+                      {posting ? "Posting..." : "Post"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <button
-            onClick={submit}
-            disabled={loading || !text.trim()}
-            className="bg-gradient-to-r from-sky-500 to-blue-700 text-white px-5 py-1.5 rounded-xl text-sm font-semibold disabled:opacity-40 hover:brightness-110 transition flex items-center gap-1.5"
-          >
-            <Send size={14} /> Post
-          </button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Feed */}
       {fetching ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 animate-pulse">
-              <div className="flex gap-3 mb-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/4" />
-                </div>
-              </div>
-              <div className="h-4 bg-gray-200 rounded mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </div>
-          ))}
-        </div>
+        <>
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </>
       ) : posts.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <div className="text-5xl mb-3">📭</div>
-          <p className="text-lg font-medium">No posts yet</p>
-          <p className="text-sm">Be the first to share something!</p>
+        <div className="text-center py-24 text-gray-400">
+          <div className="text-6xl mb-4">📭</div>
+          <p className="text-lg font-bold text-gray-700">No posts yet</p>
+          <p className="text-sm mt-1">Be the first to share something!</p>
         </div>
       ) : (
         posts.map((post, i) => (
-          <motion.div
+          <PostCard
             key={post._id || i}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
-          >
-            {/* Post Header */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <img
-                  src={post.author?.avatar || `https://ui-avatars.com/api/?name=${post.author?.username}&background=2563eb&color=fff`}
-                  className="w-10 h-10 rounded-full object-cover"
-                  alt="avatar"
-                />
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="font-bold text-sm text-gray-800">{post.author?.name || post.author?.username}</p>
-                    {verifiedBadge(post.author)}
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    @{post.author?.username} · {new Date(post.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <button className="text-gray-300 hover:text-gray-500 transition">
-                <MoreHorizontal size={18} />
-              </button>
-            </div>
-
-            {/* Post Content */}
-            <p className="text-gray-700 text-sm leading-relaxed mb-3">{post.content}</p>
-
-            {/* Post Image */}
-            {post.image && (
-              <img
-                src={post.image}
-                className="rounded-2xl w-full object-cover max-h-96 mb-3"
-                alt="post"
-              />
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-              <button
-                onClick={() => likePost(post._id)}
-                className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl transition ${
-                  post.liked ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-red-500 hover:bg-red-50"
-                }`}
-              >
-                <Heart size={16} className={post.liked ? "fill-red-500" : ""} />
-                {post.likes?.length || 0}
-              </button>
-              <button className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-500 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition">
-                <MessageCircle size={16} />
-                {post.comments?.length || 0}
-              </button>
-              <button className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-green-500 hover:bg-green-50 px-3 py-1.5 rounded-xl transition">
-                <Repeat2 size={16} />
-                {post.reposts?.length || 0}
-              </button>
-              <button className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-500 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition">
-                <Share size={16} />
-              </button>
-            </div>
-          </motion.div>
+            post={post}
+            onLike={handleLike}
+            currentUserId={user?._id}
+          />
         ))
       )}
     </div>
