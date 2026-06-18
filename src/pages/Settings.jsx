@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { User, Bell, Lock, Camera } from "lucide-react";
+import { User, Bell, Lock, Camera, Shield } from "lucide-react";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+import useUpload from "../hooks/useUpload";
 
 export default function Settings() {
+  const { setUser: setAuthUser } = useAuth();
+  // ✅ useUpload correctly inside component
+  const { uploadAvatar, uploading: uploadingAvatar } = useUpload();
+
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ username: "", bio: "", location: "", website: "" });
   const [notifications, setNotifications] = useState(true);
@@ -25,18 +31,25 @@ export default function Settings() {
     }).catch(() => {});
   }, []);
 
+  // ✅ Cloudinary avatar upload
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Show preview immediately
     const reader = new FileReader();
     reader.onloadend = () => setAvatar(reader.result);
     reader.readAsDataURL(file);
+    // Upload to Cloudinary
+    const url = await uploadAvatar(file);
+    if (url) setAvatar(url);
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await api.put("/users/me", { ...form, avatar });
+      const res = await api.put("/users/me", { ...form, avatar });
+      setUser(res.data.user);
+      setAuthUser(res.data.user);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -50,7 +63,7 @@ export default function Settings() {
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-4">
       <h1 className="text-xl font-bold text-gray-800">Settings</h1>
 
-      {/* Profile Section */}
+      {/* Profile */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -61,14 +74,19 @@ export default function Settings() {
           <h2 className="font-bold text-gray-800">Profile</h2>
         </div>
 
-        {/* Avatar Upload */}
+        {/* Avatar */}
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <img
-              src={avatar || "https://i.pravatar.cc/200"}
+              src={avatar || `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=2563eb&color=fff`}
               className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
               alt="avatar"
             />
+            {uploadingAvatar && (
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <button
               onClick={() => fileRef.current.click()}
               className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full shadow hover:bg-blue-700 transition"
@@ -82,57 +100,83 @@ export default function Settings() {
             <p className="text-sm text-gray-400">{user?.email}</p>
             <button
               onClick={() => fileRef.current.click()}
-              className="text-sm text-blue-600 font-medium hover:underline mt-1"
+              disabled={uploadingAvatar}
+              className="text-sm text-blue-600 font-medium hover:underline mt-1 disabled:opacity-50"
             >
-              Change photo
+              {uploadingAvatar ? "Uploading..." : "Change photo"}
             </button>
           </div>
         </div>
 
-        {/* Form Fields */}
+        {/* Form */}
         <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Username</label>
-            <input
-              value={form.username}
-              onChange={e => setForm({ ...form, username: e.target.value })}
-              className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+          {[
+            { key: "username", label: "Username" },
+            { key: "location", label: "Location" },
+            { key: "website", label: "Website" },
+          ].map(field => (
+            <div key={field.key}>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{field.label}</label>
+              <input
+                value={form[field.key]}
+                onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          ))}
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Bio</label>
             <textarea
               value={form.bio}
               onChange={e => setForm({ ...form, bio: e.target.value })}
               rows={3}
+              maxLength={160}
               className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Location</label>
-            <input
-              value={form.location}
-              onChange={e => setForm({ ...form, location: e.target.value })}
-              className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Website</label>
-            <input
-              value={form.website}
-              onChange={e => setForm({ ...form, website: e.target.value })}
-              className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <p className="text-xs text-gray-400 text-right">{form.bio.length}/160</p>
           </div>
         </div>
 
         <button
           onClick={save}
-          disabled={saving}
+          disabled={saving || uploadingAvatar}
           className="mt-5 w-full bg-gradient-to-r from-sky-500 to-blue-700 text-white py-2.5 rounded-xl font-semibold hover:brightness-110 transition disabled:opacity-50"
         >
           {saving ? "Saving..." : saved ? "✓ Saved!" : "Save Changes"}
         </button>
+      </motion.div>
+
+      {/* Verification Request */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Shield size={18} className="text-blue-600" />
+          <h2 className="font-bold text-gray-800">Verification</h2>
+        </div>
+        {user?.isVerified ? (
+          <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-4">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <Shield size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">Your account is verified ✓</p>
+              <p className="text-xs text-gray-400">Blue tick is active on your profile</p>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-600 mb-4">
+              Apply for a verified blue tick. Eligible for public figures, companies, creators and entertainers.
+            </p>
+            <button className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition text-sm">
+              Apply for Verification
+            </button>
+          </div>
+        )}
       </motion.div>
 
       {/* Notifications */}
@@ -164,7 +208,7 @@ export default function Settings() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.15 }}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
