@@ -18,6 +18,8 @@ export default function Messages() {
   const [active, setActive] = useState(contacts[0]);
   const [messages, setMessages] = useState(initMessages);
   const [text, setText] = useState("");
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [activeChat, setActiveChat] = useState(null);
 
   const send = () => {
     if (!text.trim()) return;
@@ -25,6 +27,115 @@ export default function Messages() {
     setText("");
   };
 
+  // Handle clicking a contact in the list
+  const handleContactClick = (c) => {
+    setSelectedContact(c);
+  };
+
+  // Handle starting a chat
+  const handleStartChat = () => {
+    if (selectedContact) {
+      setActiveChat(selectedContact);
+      setSelectedContact(null);
+    }
+  };
+
+  // Handle back to contacts list
+  const handleBackToContacts = () => {
+    setSelectedContact(null);
+    setActiveChat(null);
+  };
+
+  // Render when a contact is selected but chat not started yet
+  if (selectedContact && !activeChat) {
+    return (
+      <div className="max-w-4xl mx-auto py-6 px-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center space-y-4">
+          <img src={selectedContact.avatar} className="w-24 h-24 rounded-full object-cover mb-4" alt={selectedContact.name} />
+          <h2 className="text-xl font-semibold">{selectedContact.name}</h2>
+          <p className="text-center text-gray-600 mb-4">{selectedContact.last}</p>
+          <button
+            onClick={handleStartChat}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Start Chat
+          </button>
+          <button
+            onClick={handleBackToContacts}
+            className="mt-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+          >
+            Back to Contacts
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the chat interface if activeChat is set
+  if (activeChat) {
+    return (
+      <div className="max-w-4xl mx-auto py-6 px-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex h-[75vh] flex-col">
+          {/* Chat Header */}
+          <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+            <img src={activeChat.avatar} className="w-9 h-9 rounded-full object-cover" alt={activeChat.name} />
+            <div>
+              <p className="font-semibold text-sm text-gray-800">{activeChat.name}</p>
+              <p className="text-xs text-green-500">Online</p>
+            </div>
+            <button
+              onClick={handleBackToContacts}
+              className="ml-auto px-3 py-1 bg-gray-200 rounded-full text-xs hover:bg-gray-300 transition"
+            >
+              Back
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.from === "You" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${
+                    msg.from === "You"
+                      ? "bg-gradient-to-r from-sky-500 to-blue-700 text-white rounded-br-sm"
+                      : "bg-gray-100 text-gray-800 rounded-bl-sm"
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                  <p className={`text-xs mt-1 ${msg.from === "You" ? "text-blue-200" : "text-gray-400"}`}>{msg.time}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-gray-100 flex gap-3">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Type a message..."
+              className="flex-1 bg-gray-50 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              onClick={send}
+              className="bg-gradient-to-r from-sky-500 to-blue-700 text-white p-2.5 rounded-xl hover:brightness-110 transition"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main contacts list view
   return (
     <div className="max-w-4xl mx-auto py-6 px-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex h-[75vh]">
@@ -38,11 +149,13 @@ export default function Messages() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {contacts.map(c => (
+            {contacts.map((c) => (
               <div
                 key={c.id}
-                onClick={() => setActive(c)}
-                className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition ${active.id === c.id ? "bg-blue-50" : ""}`}
+                onClick={() => handleContactClick(c)}
+                className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition ${
+                  active.id === c.id ? "bg-blue-50" : ""
+                }`}
               >
                 <div className="relative">
                   <img src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
@@ -60,56 +173,6 @@ export default function Messages() {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-            <img src={active.avatar} className="w-9 h-9 rounded-full object-cover" alt={active.name} />
-            <div>
-              <p className="font-semibold text-sm text-gray-800">{active.name}</p>
-              <p className="text-xs text-green-500">Online</p>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map(msg => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.from === "You" ? "justify-end" : "justify-start"}`}
-              >
-                <div className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${
-                  msg.from === "You"
-                    ? "bg-gradient-to-r from-sky-500 to-blue-700 text-white rounded-br-sm"
-                    : "bg-gray-100 text-gray-800 rounded-bl-sm"
-                }`}>
-                  <p>{msg.text}</p>
-                  <p className={`text-xs mt-1 ${msg.from === "You" ? "text-blue-200" : "text-gray-400"}`}>{msg.time}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="p-4 border-t border-gray-100 flex gap-3">
-            <input
-              value={text}
-              onChange={e => setText(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && send()}
-              placeholder="Type a message..."
-              className="flex-1 bg-gray-50 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <button
-              onClick={send}
-              className="bg-gradient-to-r from-sky-500 to-blue-700 text-white p-2.5 rounded-xl hover:brightness-110 transition"
-            >
-              <Send size={16} />
-            </button>
           </div>
         </div>
       </div>
