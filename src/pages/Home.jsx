@@ -7,6 +7,7 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import useUpload from "../hooks/useUpload";
+import StoriesBar from "../components/stories/StoriesBar";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -23,13 +24,13 @@ function VerifiedBadge({ user }) {
 
 function PostSkeleton() {
   return (
-    <div className="bg-white border-b border-gray-100 p-4 animate-pulse">
+    <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] p-4 animate-pulse">
       <div className="flex gap-3">
-        <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
-          <div className="h-3 bg-gray-200 rounded w-full" />
-          <div className="h-3 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
         </div>
       </div>
     </div>
@@ -79,7 +80,7 @@ function PostCard({ post, onLike, currentUserId }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border-b border-gray-100 px-4 py-3 hover:bg-gray-50/50 transition"
+      className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-[#1e2732]/50 transition"
     >
       <div className="flex gap-3">
         <img
@@ -90,25 +91,27 @@ function PostCard({ post, onLike, currentUserId }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="font-bold text-sm text-gray-900">
+              <span className="font-bold text-sm text-gray-900 dark:text-white">
                 {localPost.author?.name || localPost.author?.username}
               </span>
               <VerifiedBadge user={localPost.author} />
-              <span className="text-gray-400 text-sm">@{localPost.author?.username}</span>
-              <span className="text-gray-300 text-sm">·</span>
-              <span className="text-gray-400 text-xs">{timeAgo(localPost.createdAt)}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-sm">@{localPost.author?.username}</span>
+              <span className="text-gray-300 dark:text-gray-600 text-sm">·</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
             </div>
-            <button className="text-gray-300 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100 transition">
+            <button className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition">
               <MoreHorizontal size={16} />
             </button>
           </div>
 
-          <p className="text-gray-800 text-sm leading-relaxed mt-1 whitespace-pre-wrap">{localPost.content}</p>
+          <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
+            {localPost.content}
+          </p>
 
           {localPost.image && (
             <img
               src={localPost.image}
-              className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100"
+              className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100 dark:border-[#38444d]"
               alt="post"
             />
           )}
@@ -117,7 +120,7 @@ function PostCard({ post, onLike, currentUserId }) {
             <button
               onClick={handleLike}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm transition group ${
-                liked ? "text-red-500" : "text-gray-400 hover:text-red-500"
+                liked ? "text-red-500" : "text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
               }`}
             >
               <Heart size={17} className={`transition group-hover:scale-110 ${liked ? "fill-red-500" : ""}`} />
@@ -126,18 +129,18 @@ function PostCard({ post, onLike, currentUserId }) {
 
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
             >
               <MessageCircle size={17} className="group-hover:scale-110 transition" />
               <span className="text-xs">{localPost.comments?.length || 0}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-green-500 transition group">
+            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition group">
               <Repeat2 size={17} className="group-hover:scale-110 transition" />
               <span className="text-xs">{localPost.reposts?.length || 0}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group">
+            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group">
               <Share2 size={17} className="group-hover:scale-110 transition" />
             </button>
           </div>
@@ -148,7 +151,7 @@ function PostCard({ post, onLike, currentUserId }) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-3 border-t border-gray-100 pt-3 space-y-3"
+                className="mt-3 border-t border-gray-100 dark:border-[#38444d] pt-3 space-y-3"
               >
                 {localPost.comments?.map((c, i) => (
                   <div key={i} className="flex gap-2">
@@ -157,9 +160,9 @@ function PostCard({ post, onLike, currentUserId }) {
                       className="w-7 h-7 rounded-full object-cover flex-shrink-0"
                       alt="avatar"
                     />
-                    <div className="bg-gray-100 rounded-2xl px-3 py-2 flex-1">
-                      <p className="text-xs font-semibold text-gray-800">{c.user?.username}</p>
-                      <p className="text-xs text-gray-600">{c.text}</p>
+                    <div className="bg-gray-100 dark:bg-[#1e2732] rounded-2xl px-3 py-2 flex-1">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">{c.user?.username}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{c.text}</p>
                     </div>
                   </div>
                 ))}
@@ -169,7 +172,7 @@ function PostCard({ post, onLike, currentUserId }) {
                     onChange={e => setComment(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && submitComment()}
                     placeholder="Write a comment..."
-                    className="flex-1 bg-gray-100 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                   <button
                     onClick={submitComment}
@@ -192,7 +195,6 @@ const tabs = ["For You", "Following", "News", "Trending"];
 
 export default function Home() {
   const { user } = useAuth();
-  // ✅ useUpload is now correctly INSIDE the component
   const { uploadImage, uploading: uploadingImage } = useUpload();
 
   const [posts, setPosts] = useState([]);
@@ -226,7 +228,6 @@ export default function Home() {
     const file = e.target.files[0];
     if (!file) return;
     setImageFile(file);
-    // Show local preview immediately
     const reader = new FileReader();
     reader.onloadend = () => setImage(reader.result);
     reader.readAsDataURL(file);
@@ -237,7 +238,6 @@ export default function Home() {
     setPosting(true);
     try {
       let imageUrl = null;
-      // Upload to Cloudinary if there's an image file
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
@@ -263,28 +263,32 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Sticky Header Tabs */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
-  <div className="flex">
-    {tabs.map(tab => (
-      <button
-        key={tab}
-        onClick={() => setActiveTab(tab)}
-        className={`flex-1 py-4 text-sm font-semibold transition relative border-b-2 ${
-          activeTab === tab
-            ? "text-gray-900 border-blue-600"
-            : "text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50"
-        }`}
-      >
-        {tab}
-      </button>
-    ))}
-  </div>
-</div>
+    <div className="min-h-screen dark:bg-[#15202b]">
+
+      {/* ✅ Sticky Header Tabs — fixed alignment */}
+      <div className="sticky top-0 z-10 bg-white/90 dark:bg-[#15202b]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#38444d]">
+        <div className="flex">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-4 text-sm font-semibold transition border-b-2 ${
+                activeTab === tab
+                  ? "text-gray-900 dark:text-white border-blue-600"
+                  : "text-gray-400 dark:text-gray-500 border-transparent hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2732]"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ✅ Stories Bar — now actually placed in JSX */}
+      <StoriesBar />
 
       {/* Create Post */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
+      <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
         <div className="flex gap-3">
           <img
             src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username || "U"}&background=2563eb&color=fff`}
@@ -298,13 +302,13 @@ export default function Home() {
               onChange={e => setText(e.target.value)}
               onFocus={() => setExpanded(true)}
               placeholder="What's happening?"
-              className="w-full resize-none outline-none text-gray-800 placeholder-gray-400 text-[15px] bg-transparent"
+              className="w-full resize-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-[15px] bg-transparent"
               rows={expanded ? 3 : 1}
             />
 
             {image && (
               <div className="relative mt-2">
-                <img src={image} className="rounded-2xl w-full max-h-60 object-cover border border-gray-100" alt="preview" />
+                <img src={image} className="rounded-2xl w-full max-h-60 object-cover border border-gray-100 dark:border-[#38444d]" alt="preview" />
                 <button
                   onClick={() => { setImage(null); setImageFile(null); }}
                   className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
@@ -325,23 +329,23 @@ export default function Home() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100"
+                  className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-[#38444d]"
                 >
                   <div className="flex gap-1">
-                    <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition cursor-pointer">
                       <Image size={18} />
                       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
                     </label>
-                    <button className="text-blue-500 hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition">
+                    <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
                       <Video size={18} />
                     </button>
-                    <button className="text-blue-500 hover:bg-blue-50 px-2.5 py-1.5 rounded-full transition">
+                    <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
                       <Smile size={18} />
                     </button>
                   </div>
                   <div className="flex items-center gap-3">
                     {text.length > 0 && (
-                      <span className={`text-xs font-medium ${text.length > 260 ? "text-red-500" : "text-gray-400"}`}>
+                      <span className={`text-xs font-medium ${text.length > 260 ? "text-red-500" : "text-gray-400 dark:text-gray-500"}`}>
                         {280 - text.length}
                       </span>
                     )}
@@ -366,7 +370,7 @@ export default function Home() {
       ) : posts.length === 0 ? (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">📭</div>
-          <p className="text-lg font-bold text-gray-700">No posts yet</p>
+          <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts yet</p>
           <p className="text-sm mt-1">Be the first to share something!</p>
         </div>
       ) : (

@@ -1,38 +1,58 @@
-import {
-  Home,
-  Radio,
-  User,
-  Bell,
-} from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Home, Search, Bell, Mail, User, Moon, Sun } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
-import { Link, useLocation } from "react-router-dom";
-
-export default function MobileNav() {
+export default function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { dark, toggleTheme } = useTheme();
 
-  const links = [
-    { to: "/", icon: <Home />, ariaLabel: "Home" },
-    { to: "/live", icon: <Radio />, ariaLabel: "Live" },
-    { to: "/notifications", icon: <Bell />, ariaLabel: "Notifications" },
-    { to: "/profile/me", icon: <User />, ariaLabel: "Profile" },
+  const navItems = [
+    { to: "/home", icon: Home },
+    { to: "/explore", icon: Search },
+    { to: "/notifications", icon: Bell, badge: true },
+    { to: "/messages", icon: Mail },
+    { to: "/profile/me", icon: User, isAvatar: true },
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t h-16 flex justify-around items-center">
-      {links.map((link) => (
-        <Link
-          key={link.to}
-          to={link.to}
-          aria-label={link.ariaLabel}
-          className={`flex flex-col items-center justify-center p-2 ${
-            location.pathname === link.to
-              ? "text-blue-600"
-              : "text-gray-600 hover:text-blue-500"
-          }`}
-        >
-          {React.cloneElement(link.icon, { size: 24, "aria-hidden": true })}
-        </Link>
-      ))}
-    </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#15202b] border-t border-gray-200 dark:border-[#38444d] flex md:hidden transition-colors duration-200">
+      {navItems.map(({ to, icon: Icon, badge, isAvatar }) => {
+        const active = location.pathname === to;
+        return (
+          <button
+            key={to}
+            onClick={() => navigate(to)}
+            className={`flex-1 flex flex-col items-center justify-center py-3 transition relative ${
+              active ? "text-blue-600" : "text-gray-400 dark:text-gray-500"
+            }`}
+          >
+            {isAvatar && user?.avatar ? (
+              <img
+                src={user.avatar}
+                className={`w-7 h-7 rounded-full object-cover border-2 ${active ? "border-blue-600" : "border-transparent"}`}
+                alt="avatar"
+              />
+            ) : (
+              <Icon size={22} />
+            )}
+            {badge && (
+              <span className="absolute top-2 right-[calc(50%-8px)] w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                3
+              </span>
+            )}
+          </button>
+        );
+      })}
+      {/* Theme toggle on mobile */}
+      <button
+        onClick={toggleTheme}
+        className="flex-1 flex flex-col items-center justify-center py-3 text-gray-400 dark:text-gray-500 transition"
+      >
+        {dark ? <Sun size={22} className="text-yellow-400" /> : <Moon size={22} />}
+      </button>
+    </nav>
   );
 }

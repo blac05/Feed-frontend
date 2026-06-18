@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const reactions = ["❤️", "🔥", "😂", "😮", "😍", "👍"];
+const reactions = ["❤️", "🔥", "😂", "😮", "😍", "👍", "👏", "😢" ];
 
 export default function StoryViewer({ story, onClose }) {
   const [progress, setProgress] = useState(0);

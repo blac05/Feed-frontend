@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/layout/Layout";
-import StoryCard from "../components/stories/StoryCard";
-import StoryViewer from "../components/stories/StoryViewer";
+import StoryCard from "../components/stories/StoriesCard";
+import StoryViewer from "../components/stories/StoriesViewer";
 import api from "../api/axios";
 
 export default function Stories() {
