@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Image, Video, Smile, Send, Heart, MessageCircle,
+  Image, Video, Smile, Heart, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle, X
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import useUpload from "../hooks/useUpload";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -48,7 +49,7 @@ function PostCard({ post, onLike, currentUserId }) {
       ...prev,
       likes: liked
         ? prev.likes.filter(id => id !== currentUserId)
-        : [...(prev.likes || []), currentUserId]
+        : [...(prev.likes || []), currentUserId],
     }));
   };
 
@@ -81,15 +82,12 @@ function PostCard({ post, onLike, currentUserId }) {
       className="bg-white border-b border-gray-100 px-4 py-3 hover:bg-gray-50/50 transition"
     >
       <div className="flex gap-3">
-        {/* Avatar */}
         <img
           src={localPost.author?.avatar || `https://ui-avatars.com/api/?name=${localPost.author?.username}&background=2563eb&color=fff`}
           className="w-10 h-10 rounded-full object-cover flex-shrink-0 mt-0.5"
           alt="avatar"
         />
-
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-wrap">
               <span className="font-bold text-sm text-gray-900">
@@ -105,10 +103,8 @@ function PostCard({ post, onLike, currentUserId }) {
             </button>
           </div>
 
-          {/* Content */}
           <p className="text-gray-800 text-sm leading-relaxed mt-1 whitespace-pre-wrap">{localPost.content}</p>
 
-          {/* Image */}
           {localPost.image && (
             <img
               src={localPost.image}
@@ -117,23 +113,17 @@ function PostCard({ post, onLike, currentUserId }) {
             />
           )}
 
-          {/* Actions */}
           <div className="flex items-center justify-between mt-3 -ml-2">
-            {/* Like */}
             <button
               onClick={handleLike}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm transition group ${
                 liked ? "text-red-500" : "text-gray-400 hover:text-red-500"
               }`}
             >
-              <Heart
-                size={17}
-                className={`transition group-hover:scale-110 ${liked ? "fill-red-500" : ""}`}
-              />
+              <Heart size={17} className={`transition group-hover:scale-110 ${liked ? "fill-red-500" : ""}`} />
               <span className="text-xs">{localPost.likes?.length || 0}</span>
             </button>
 
-            {/* Comment */}
             <button
               onClick={() => setShowComments(!showComments)}
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group"
@@ -142,19 +132,16 @@ function PostCard({ post, onLike, currentUserId }) {
               <span className="text-xs">{localPost.comments?.length || 0}</span>
             </button>
 
-            {/* Repost */}
             <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-green-500 transition group">
               <Repeat2 size={17} className="group-hover:scale-110 transition" />
               <span className="text-xs">{localPost.reposts?.length || 0}</span>
             </button>
 
-            {/* Share */}
             <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 hover:text-blue-500 transition group">
               <Share2 size={17} className="group-hover:scale-110 transition" />
             </button>
           </div>
 
-          {/* Comments Section */}
           <AnimatePresence>
             {showComments && (
               <motion.div
@@ -205,12 +192,16 @@ const tabs = ["For You", "Following", "News", "Trending"];
 
 export default function Home() {
   const { user } = useAuth();
+  // ✅ useUpload is now correctly INSIDE the component
+  const { uploadImage, uploading: uploadingImage } = useUpload();
+
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState("For You");
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const fileRef = useRef();
   const textRef = useRef();
@@ -234,6 +225,8 @@ export default function Home() {
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setImageFile(file);
+    // Show local preview immediately
     const reader = new FileReader();
     reader.onloadend = () => setImage(reader.result);
     reader.readAsDataURL(file);
@@ -243,10 +236,16 @@ export default function Home() {
     if (!text.trim()) return;
     setPosting(true);
     try {
-      const res = await api.post("/posts", { content: text, image });
+      let imageUrl = null;
+      // Upload to Cloudinary if there's an image file
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+      const res = await api.post("/posts", { content: text, image: imageUrl });
       setPosts(prev => [res.data.post, ...prev]);
       setText("");
       setImage(null);
+      setImageFile(null);
       setExpanded(false);
     } catch (err) {
       console.error(err);
@@ -265,7 +264,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Sticky Header */}
+      {/* Sticky Header Tabs */}
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex">
           {tabs.map(tab => (
@@ -311,11 +310,16 @@ export default function Home() {
               <div className="relative mt-2">
                 <img src={image} className="rounded-2xl w-full max-h-60 object-cover border border-gray-100" alt="preview" />
                 <button
-                  onClick={() => setImage(null)}
+                  onClick={() => { setImage(null); setImageFile(null); }}
                   className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
                 >
                   <X size={14} />
                 </button>
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/30 rounded-2xl flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
             )}
 
@@ -347,10 +351,10 @@ export default function Home() {
                     )}
                     <button
                       onClick={submit}
-                      disabled={posting || !text.trim() || text.length > 280}
+                      disabled={posting || !text.trim() || text.length > 280 || uploadingImage}
                       className="bg-gradient-to-r from-sky-500 to-blue-700 text-white px-5 py-2 rounded-full text-sm font-bold disabled:opacity-40 hover:brightness-110 transition"
                     >
-                      {posting ? "Posting..." : "Post"}
+                      {uploadingImage ? "Uploading..." : posting ? "Posting..." : "Post"}
                     </button>
                   </div>
                 </motion.div>
@@ -362,12 +366,7 @@ export default function Home() {
 
       {/* Feed */}
       {fetching ? (
-        <>
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
-          <PostSkeleton />
-        </>
+        <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
       ) : posts.length === 0 ? (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">📭</div>
@@ -386,4 +385,5 @@ export default function Home() {
       )}
     </div>
   );
+}
 }
