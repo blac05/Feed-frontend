@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Image, Video, Smile, Heart, MessageCircle,
-  Repeat2, Share2, MoreHorizontal, CheckCircle, X
+  Repeat2, Share2, MoreHorizontal, CheckCircle,
+  X, Trash2, Flag, Link
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
 
@@ -37,12 +39,27 @@ function PostSkeleton() {
   );
 }
 
-function PostCard({ post, onLike, currentUserId }) {
+function PostCard({ post, onLike, onDelete, currentUserId }) {
+  const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
   const liked = localPost.likes?.includes(currentUserId);
+  const isOwn = localPost.author?._id === currentUserId;
+  const menuRef = useRef();
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleLike = async () => {
     onLike(localPost._id);
@@ -52,6 +69,24 @@ function PostCard({ post, onLike, currentUserId }) {
         ? prev.likes.filter(id => id !== currentUserId)
         : [...(prev.likes || []), currentUserId],
     }));
+    if (!liked) toast({ message: "Post liked!", type: "success" });
+  };
+
+  const handleDelete = async () => {
+    setShowMenu(false);
+    try {
+      await api.delete(`/posts/${localPost._id}`);
+      onDelete(localPost._id);
+      toast({ message: "Post deleted", type: "success" });
+    } catch (err) {
+      toast({ message: "Failed to delete post", type: "error" });
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/post/${localPost._id}`);
+    toast({ message: "Link copied!", type: "success" });
+    setShowMenu(false);
   };
 
   const submitComment = async () => {
@@ -61,8 +96,9 @@ function PostCard({ post, onLike, currentUserId }) {
       const res = await api.post(`/posts/${localPost._id}/comment`, { text: comment });
       setLocalPost(res.data.post);
       setComment("");
+      toast({ message: "Comment posted!", type: "success" });
     } catch (err) {
-      console.error(err);
+      toast({ message: "Failed to post comment", type: "error" });
     } finally {
       setSubmitting(false);
     }
@@ -89,6 +125,7 @@ function PostCard({ post, onLike, currentUserId }) {
           alt="avatar"
         />
         <div className="flex-1 min-w-0">
+          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-wrap">
               <span className="font-bold text-sm text-gray-900 dark:text-white">
@@ -99,15 +136,58 @@ function PostCard({ post, onLike, currentUserId }) {
               <span className="text-gray-300 dark:text-gray-600 text-sm">·</span>
               <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
             </div>
-            <button className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition">
-              <MoreHorizontal size={16} />
-            </button>
+
+            {/* Three-dot menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+
+              <AnimatePresence>
+                {showMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute right-0 top-8 w-48 bg-white dark:bg-[#1e2732] rounded-2xl shadow-xl border border-gray-100 dark:border-[#38444d] z-20 overflow-hidden"
+                  >
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
+                    >
+                      <Link size={14} /> Copy link
+                    </button>
+                    {isOwn && (
+                      <button
+                        onClick={handleDelete}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                      >
+                        <Trash2 size={14} /> Delete post
+                      </button>
+                    )}
+                    {!isOwn && (
+                      <button
+                        onClick={() => { toast({ message: "Post reported", type: "info" }); setShowMenu(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
+                      >
+                        <Flag size={14} /> Report post
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
+          {/* Content */}
           <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
             {localPost.content}
           </p>
 
+          {/* Image */}
           {localPost.image && (
             <img
               src={localPost.image}
@@ -116,6 +196,7 @@ function PostCard({ post, onLike, currentUserId }) {
             />
           )}
 
+          {/* Actions */}
           <div className="flex items-center justify-between mt-3 -ml-2">
             <button
               onClick={handleLike}
@@ -135,16 +216,23 @@ function PostCard({ post, onLike, currentUserId }) {
               <span className="text-xs">{localPost.comments?.length || 0}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition group">
+            <button
+              onClick={() => toast({ message: "Reposted!", type: "success" })}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition group"
+            >
               <Repeat2 size={17} className="group-hover:scale-110 transition" />
               <span className="text-xs">{localPost.reposts?.length || 0}</span>
             </button>
 
-            <button className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group">
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
+            >
               <Share2 size={17} className="group-hover:scale-110 transition" />
             </button>
           </div>
 
+          {/* Comments */}
           <AnimatePresence>
             {showComments && (
               <motion.div
@@ -153,6 +241,9 @@ function PostCard({ post, onLike, currentUserId }) {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-3 border-t border-gray-100 dark:border-[#38444d] pt-3 space-y-3"
               >
+                {localPost.comments?.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-2">No comments yet. Be the first!</p>
+                )}
                 {localPost.comments?.map((c, i) => (
                   <div key={i} className="flex gap-2">
                     <img
@@ -195,6 +286,7 @@ const tabs = ["For You", "Following", "News", "Trending"];
 
 export default function Home() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { uploadImage, uploading: uploadingImage } = useUpload();
 
   const [posts, setPosts] = useState([]);
@@ -215,7 +307,8 @@ export default function Home() {
   const fetchPosts = async () => {
     setFetching(true);
     try {
-      const res = await api.get("/posts");
+      const endpoint = activeTab === "Following" ? "/posts/following" : "/posts";
+      const res = await api.get(endpoint);
       setPosts(res.data.posts || []);
     } catch (err) {
       console.error(err);
@@ -247,8 +340,9 @@ export default function Home() {
       setImage(null);
       setImageFile(null);
       setExpanded(false);
+      toast({ message: "Post published!", type: "success" });
     } catch (err) {
-      console.error(err);
+      toast({ message: "Failed to post", type: "error" });
     } finally {
       setPosting(false);
     }
@@ -262,10 +356,13 @@ export default function Home() {
     }
   };
 
+  const handleDelete = (id) => {
+    setPosts(prev => prev.filter(p => p._id !== id));
+  };
+
   return (
     <div className="min-h-screen dark:bg-[#15202b]">
-
-      {/* ✅ Sticky Header Tabs — fixed alignment */}
+      {/* Sticky Tabs */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-[#15202b]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#38444d]">
         <div className="flex">
           {tabs.map(tab => (
@@ -284,7 +381,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Stories Bar — now actually placed in JSX */}
+      {/* Stories Bar */}
       <StoriesBar />
 
       {/* Create Post */}
@@ -364,10 +461,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Following empty state */}
+      {!fetching && posts.length === 0 && activeTab === "Following" && (
+        <div className="text-center py-24 text-gray-400">
+          <div className="text-6xl mb-4">👥</div>
+          <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts from people you follow</p>
+          <p className="text-sm mt-1">Follow more people to see their posts here</p>
+        </div>
+      )}
+
       {/* Feed */}
       {fetching ? (
         <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
-      ) : posts.length === 0 ? (
+      ) : posts.length === 0 && activeTab !== "Following" ? (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">📭</div>
           <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts yet</p>
@@ -379,6 +485,7 @@ export default function Home() {
             key={post._id || i}
             post={post}
             onLike={handleLike}
+            onDelete={handleDelete}
             currentUserId={user?._id}
           />
         ))
