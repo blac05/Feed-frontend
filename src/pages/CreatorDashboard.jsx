@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Layout from "../components/layout/Layout";
+import Layout from "../components/layout/MainLayout";
 
 export default function CreatorDashboard() {
   const [stats, setStats] = useState({
