@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Image, Video, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
-  X, Trash2, Flag, Link, Bookmark
+  X, Trash2, Flag, Link, Bookmark, BarChart2, Quote
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +12,9 @@ import { useToast } from "../context/ToastContext";
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
 import ReactionPicker from "../components/feed/ReactionPicker";
+import QuotePost from "../components/feed/QuotePost";
+import PollCard from "../components/feed/PollCard";
+import CreatePoll from "../components/feed/CreatePoll";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -41,11 +44,68 @@ function PostSkeleton() {
   );
 }
 
+function QuoteInput({ quotedPost, onClose, onPosted }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [text, setText] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const submit = async () => {
+    if (!text.trim()) return;
+    setPosting(true);
+    try {
+      const res = await api.post("/posts", {
+        content: text,
+        quotedPostId: quotedPost._id,
+        type: "quote",
+      });
+      onPosted(res.data.post);
+      setText("");
+    } catch (err) {
+      toast({ message: "Failed to quote post", type: "error" });
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <img
+          src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=2563eb&color=fff`}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+          alt="avatar"
+        />
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="Add your comment..."
+          rows={2}
+          className="flex-1 resize-none bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+      <QuotePost post={quotedPost} />
+      <div className="flex justify-end gap-2">
+        <button onClick={onClose} className="text-gray-400 text-sm px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition">Cancel</button>
+        <button
+          onClick={submit}
+          disabled={!text.trim() || posting}
+          className="bg-blue-600 text-white text-sm px-4 py-1.5 rounded-full font-bold disabled:opacity-40 hover:bg-blue-700 transition"
+        >
+          {posting ? "Posting..." : "Quote"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PostCard({ post, onDelete, onReact, currentUserId }) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showQuote, setShowQuote] = useState(false);
+  const [showQuoteInput, setShowQuoteInput] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
@@ -191,12 +251,23 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             </div>
           </div>
 
-          {/* Clickable body routing to post detail */}
-          <p
-            onClick={() => navigate(`/post/${localPost._id}`)}
-            className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap cursor-pointer hover:opacity-80"
-          >
-            {localPost.content}
+          {/* Hashtag-aware text mapping */}
+          <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
+            {localPost.content.split(/(\s+)/).map((word, i) => {
+              if (word.startsWith("#")) {
+                const tag = word.slice(1);
+                return (
+                  <span
+                    key={i}
+                    onClick={e => { e.stopPropagation(); navigate(`/hashtag/${tag}`); }}
+                    className="text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
+                  >
+                    {word}
+                  </span>
+                );
+              }
+              return <span key={i} onClick={() => navigate(`/post/${localPost._id}`)} className="cursor-pointer">{word}</span>;
+            })}
           </p>
 
           {/* Image attachments */}
@@ -205,6 +276,18 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               src={localPost.image}
               className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100 dark:border-[#38444d]"
               alt="post"
+            />
+          )}
+
+          {/* Quote post preview */}
+          {localPost.quotedPost && <QuotePost post={localPost.quotedPost} />}
+
+          {/* Poll Render Block */}
+          {localPost.poll?.options?.length > 0 && (
+            <PollCard
+              post={localPost}
+              currentUserId={currentUserId}
+              onUpdate={updated => setLocalPost(updated)}
             />
           )}
 
@@ -227,13 +310,40 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-xs">{localPost.comments?.length || 0}</span>
             </button>
 
-            <button
-              onClick={() => toast({ message: "Reposted!", type: "success" })}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition group"
-            >
-              <Repeat2 size={17} className="group-hover:scale-110 transition" />
-              <span className="text-xs">{localPost.reposts?.length || 0}</span>
-            </button>
+            {/* Nested Quote / Repost Action Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowQuote(!showQuote)}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition group"
+              >
+                <Repeat2 size={17} className="group-hover:scale-110 transition" />
+                <span className="text-xs">{localPost.reposts?.length || 0}</span>
+              </button>
+              
+              <AnimatePresence>
+                {showQuote && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute left-0 top-8 w-44 bg-white dark:bg-[#1e2732] rounded-2xl shadow-xl border border-gray-100 dark:border-[#38444d] z-20 overflow-hidden"
+                  >
+                    <button
+                      onClick={() => { toast({ message: "Reposted!", type: "success" }); setShowQuote(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
+                    >
+                      <Repeat2 size={14} /> Repost
+                    </button>
+                    <button
+                      onClick={() => { setShowQuoteInput(true); setShowQuote(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
+                    >
+                      <Quote size={14} /> Quote post
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <button
               onClick={handleCopyLink}
@@ -251,6 +361,24 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <Bookmark size={17} className={`group-hover:scale-110 transition ${bookmarked ? "fill-blue-500" : ""}`} />
             </button>
           </div>
+
+          {/* Quote post input tray */}
+          <AnimatePresence>
+            {showQuoteInput && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 border-t border-gray-100 dark:border-[#38444d] pt-3"
+              >
+                <QuoteInput
+                  quotedPost={localPost}
+                  onClose={() => setShowQuoteInput(false)}
+                  onPosted={(newPost) => { toast({ message: "Quote posted!", type: "success" }); setShowQuoteInput(false); }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Comments Nested Layout */}
           <AnimatePresence>
@@ -317,6 +445,8 @@ export default function Home() {
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [pollData, setPollData] = useState(null);
+  const [showPoll, setShowPoll] = useState(false);
   const fileRef = useRef();
   const textRef = useRef();
 
@@ -327,7 +457,9 @@ export default function Home() {
   const fetchPosts = async () => {
     setFetching(true);
     try {
-      const endpoint = activeTab === "Following" ? "/posts/following" : "/posts";
+      let endpoint = "/posts";
+      if (activeTab === "Following") endpoint = "/posts/following";
+      if (activeTab === "Trending") endpoint = "/posts/trending";
       const res = await api.get(endpoint);
       setPosts(res.data.posts || []);
     } catch (err) {
@@ -354,11 +486,16 @@ export default function Home() {
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
-      const res = await api.post("/posts", { content: text, image: imageUrl });
+      const payload = { content: text, image: imageUrl };
+      if (pollData) payload.poll = pollData;
+      
+      const res = await api.post("/posts", payload);
       setPosts(prev => [res.data.post, ...prev]);
       setText("");
       setImage(null);
       setImageFile(null);
+      setPollData(null);
+      setShowPoll(false);
       setExpanded(false);
       toast({ message: "Post published!", type: "success" });
     } catch (err) {
@@ -368,7 +505,6 @@ export default function Home() {
     }
   };
 
-  // State update callback passed down into the plugin
   const handleReact = async (id, type) => {
     try {
       const res = await api.post(`/posts/${id}/react`, { type });
@@ -443,6 +579,16 @@ export default function Home() {
               </div>
             )}
 
+            {/* Poll Creation Builder */}
+            <AnimatePresence>
+              {showPoll && (
+                <CreatePoll
+                  onPollChange={setPollData}
+                  onRemove={() => { setShowPoll(false); setPollData(null); }}
+                />
+              )}
+            </AnimatePresence>
+
             <AnimatePresence>
               {expanded && (
                 <motion.div
@@ -461,6 +607,12 @@ export default function Home() {
                     </button>
                     <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
                       <Smile size={18} />
+                    </button>
+                    <button
+                      onClick={() => setShowPoll(!showPoll)}
+                      className={`text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition ${showPoll ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
+                    >
+                      <BarChart2 size={18} />
                     </button>
                   </div>
                   <div className="flex items-center gap-3">
@@ -516,3 +668,4 @@ export default function Home() {
     </div>
   );
 }
+
