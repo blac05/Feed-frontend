@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Layout from "../components/layout/MainLayout";
+import Layout from "../components/MainLayout/Layout";
 import LiveChat from "../components/live/LiveChat";
 import GiftPanel from "../components/live/GiftPanel";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Layout from "../components/layout/MainLayout";
+import Layout from "../components/MainLayout/Layout";
 import ProductGrid from "../components/marketplace/ProductGrid";
 
 export default function Marketplace() {
