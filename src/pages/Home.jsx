@@ -1,7 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Image, Video, Smile, Heart, MessageCircle,
+  Image, Video, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
   X, Trash2, Flag, Link
 } from "lucide-react";
@@ -10,6 +11,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
+import ReactionPicker from "../components/feed/ReactionPicker";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -39,18 +41,23 @@ function PostSkeleton() {
   );
 }
 
-function PostCard({ post, onLike, onDelete, currentUserId }) {
+function PostCard({ post, onDelete, onReact, currentUserId }) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
-  const liked = localPost.likes?.includes(currentUserId);
   const isOwn = localPost.author?._id === currentUserId;
   const menuRef = useRef();
 
-  // Close menu on outside click
+  // Keep local component state synced with feed array changes
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
+
+  // Close context menu on external clicks
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -60,17 +67,6 @@ function PostCard({ post, onLike, onDelete, currentUserId }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const handleLike = async () => {
-    onLike(localPost._id);
-    setLocalPost(prev => ({
-      ...prev,
-      likes: liked
-        ? prev.likes.filter(id => id !== currentUserId)
-        : [...(prev.likes || []), currentUserId],
-    }));
-    if (!liked) toast({ message: "Post liked!", type: "success" });
-  };
 
   const handleDelete = async () => {
     setShowMenu(false);
@@ -182,8 +178,11 @@ function PostCard({ post, onLike, onDelete, currentUserId }) {
             </div>
           </div>
 
-          {/* Content */}
-          <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
+          {/* Clickable Content Routing */}
+          <p
+            onClick={() => navigate(`/post/${localPost._id}`)}
+            className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap cursor-pointer hover:opacity-80"
+          >
             {localPost.content}
           </p>
 
@@ -196,17 +195,16 @@ function PostCard({ post, onLike, onDelete, currentUserId }) {
             />
           )}
 
-          {/* Actions */}
+          {/* Actions Container */}
           <div className="flex items-center justify-between mt-3 -ml-2">
-            <button
-              onClick={handleLike}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm transition group ${
-                liked ? "text-red-500" : "text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-              }`}
-            >
-              <Heart size={17} className={`transition group-hover:scale-110 ${liked ? "fill-red-500" : ""}`} />
-              <span className="text-xs">{localPost.likes?.length || 0}</span>
-            </button>
+            {/* Integrated Plugin Element replacing standard like button */}
+            <ReactionPicker
+              postId={localPost._id}
+              likes={localPost.likes || []}
+              reactions={localPost.reactions || []}
+              currentUserId={currentUserId}
+              onReact={(type) => onReact(localPost._id, type)}
+            />
 
             <button
               onClick={() => setShowComments(!showComments)}
@@ -232,7 +230,7 @@ function PostCard({ post, onLike, onDelete, currentUserId }) {
             </button>
           </div>
 
-          {/* Comments */}
+          {/* Comments Section */}
           <AnimatePresence>
             {showComments && (
               <motion.div
@@ -348,11 +346,14 @@ export default function Home() {
     }
   };
 
-  const handleLike = async (id) => {
+  // State processor for plugin interface
+  const handleReact = async (id, type) => {
     try {
-      await api.put(`/posts/${id}/like`);
+      const res = await api.post(`/posts/${id}/react`, { type });
+      setPosts(prev => prev.map(p => p._id === id ? res.data.post : p));
     } catch (err) {
       console.error(err);
+      toast({ message: "Failed to update reaction", type: "error" });
     }
   };
 
@@ -384,7 +385,7 @@ export default function Home() {
       {/* Stories Bar */}
       <StoriesBar />
 
-      {/* Create Post */}
+      {/* Create Post Form */}
       <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
         <div className="flex gap-3">
           <img
@@ -461,7 +462,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Following empty state */}
+      {/* Empty States */}
       {!fetching && posts.length === 0 && activeTab === "Following" && (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">👥</div>
@@ -470,7 +471,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Feed */}
+      {/* Main Feed Target Container */}
       {fetching ? (
         <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
       ) : posts.length === 0 && activeTab !== "Following" ? (
@@ -484,12 +485,14 @@ export default function Home() {
           <PostCard
             key={post._id || i}
             post={post}
-            onLike={handleLike}
             onDelete={handleDelete}
+            onReact={handleReact}
             currentUserId={user?._id}
           />
         ))
       )}
     </div>
   );
+}
+
 }
