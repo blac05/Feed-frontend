@@ -1,6 +1,6 @@
 import React from 'react';
 import Navbar from './Navbar';
-import LeftPanel from './LeftPanel';
+import LeftPanel from './Sidebar';
 import RightPanel from './RightPanel';
 
 function Layout({ children, onToggleSidebar }) {
