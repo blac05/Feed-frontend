@@ -52,12 +52,12 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   const isOwn = localPost.author?._id === currentUserId;
   const menuRef = useRef();
 
-  // Keep local component state synced with feed array changes
+  // Keep local component state in sync with external shifts
   useEffect(() => {
     setLocalPost(post);
   }, [post]);
 
-  // Close context menu on external clicks
+  // Click outside handler for dropdown menu
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -133,7 +133,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
             </div>
 
-            {/* Three-dot menu */}
+            {/* Three-dot context menu */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
@@ -178,7 +178,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             </div>
           </div>
 
-          {/* Clickable Content Routing */}
+          {/* Clickable body routing to post detail */}
           <p
             onClick={() => navigate(`/post/${localPost._id}`)}
             className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap cursor-pointer hover:opacity-80"
@@ -186,7 +186,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             {localPost.content}
           </p>
 
-          {/* Image */}
+          {/* Image attachments */}
           {localPost.image && (
             <img
               src={localPost.image}
@@ -195,9 +195,9 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             />
           )}
 
-          {/* Actions Container */}
+          {/* Lower Action Layout */}
           <div className="flex items-center justify-between mt-3 -ml-2">
-            {/* Integrated Plugin Element replacing standard like button */}
+            {/* Integrated Reaction Picker Plugin */}
             <ReactionPicker
               postId={localPost._id}
               likes={localPost.likes || []}
@@ -230,7 +230,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             </button>
           </div>
 
-          {/* Comments Section */}
+          {/* Comments Nested Layout */}
           <AnimatePresence>
             {showComments && (
               <motion.div
@@ -346,7 +346,7 @@ export default function Home() {
     }
   };
 
-  // State processor for plugin interface
+  // State update callback passed down into the plugin
   const handleReact = async (id, type) => {
     try {
       const res = await api.post(`/posts/${id}/react`, { type });
@@ -363,7 +363,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen dark:bg-[#15202b]">
-      {/* Sticky Tabs */}
+      {/* Navigation Layer */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-[#15202b]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#38444d]">
         <div className="flex">
           {tabs.map(tab => (
@@ -382,10 +382,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Stories Bar */}
+      {/* Highlights / Stories Stream */}
       <StoriesBar />
 
-      {/* Create Post Form */}
+      {/* Editor Block */}
       <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
         <div className="flex gap-3">
           <img
@@ -462,7 +462,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Empty States */}
+      {/* Missing context empty view state */}
       {!fetching && posts.length === 0 && activeTab === "Following" && (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">👥</div>
@@ -471,7 +471,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Feed Target Container */}
+      {/* Timeline Stream Execution Target */}
       {fetching ? (
         <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
       ) : posts.length === 0 && activeTab !== "Following" ? (
@@ -493,6 +493,4 @@ export default function Home() {
       )}
     </div>
   );
-}
-
 }
