@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Layout from "../components/layout/Layout";
 import CaptionGenerator from "../components/ai/CaptionGenerator";
 import HashtagGenerator from "../components/ai/HashtagGenerator";
 

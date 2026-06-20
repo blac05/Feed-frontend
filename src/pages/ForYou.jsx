@@ -1,4 +1,3 @@
-import Layout from "../components/layout/Layout";
 import ForYouFeed from "../components/reccomendations/ForYouFeed";
 
 export default function ForYou() {
