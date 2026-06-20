@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Image, Video, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
-  X, Trash2, Flag, Link
+  X, Trash2, Flag, Link, Bookmark
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -49,12 +49,14 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
+  const [bookmarked, setBookmarked] = useState(post.isBookmarked || false);
   const isOwn = localPost.author?._id === currentUserId;
   const menuRef = useRef();
 
   // Keep local component state in sync with external shifts
   useEffect(() => {
     setLocalPost(post);
+    setBookmarked(post.isBookmarked || false);
   }, [post]);
 
   // Click outside handler for dropdown menu
@@ -83,6 +85,17 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
     navigator.clipboard.writeText(`${window.location.origin}/post/${localPost._id}`);
     toast({ message: "Link copied!", type: "success" });
     setShowMenu(false);
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const res = await api.post(`/users/bookmark/${localPost._id}`);
+      setBookmarked(res.data.bookmarked);
+      toast({ message: res.data.bookmarked ? "Saved!" : "Removed from saved", type: "success" });
+    } catch (err) {
+      console.error(err);
+      toast({ message: "Failed to update bookmark", type: "error" });
+    }
   };
 
   const submitComment = async () => {
@@ -227,6 +240,15 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition group"
             >
               <Share2 size={17} className="group-hover:scale-110 transition" />
+            </button>
+
+            <button
+              onClick={handleBookmark}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-full text-sm transition group ${
+                bookmarked ? "text-blue-500" : "text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              }`}
+            >
+              <Bookmark size={17} className={`group-hover:scale-110 transition ${bookmarked ? "fill-blue-500" : ""}`} />
             </button>
           </div>
 
