@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Routes, Route } from "react-router-dom";
 
 import Landing from "../pages/Landing";
 import AdminDashboard from "../pages/AdminDashboard";
@@ -45,11 +44,7 @@ import Wallet from "../pages/Wallet";
 import PostDetail from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
 
-
-
 function AppRoutes() {
-  const { user } = useAuth();
-
   return (
     <Routes>
       {/* Auth / Landing */}
@@ -75,8 +70,6 @@ function AppRoutes() {
       <Route path="/post/:id" element={<PostDetail />} />
       <Route path="/hashtag/:tag" element={<HashtagPage />} />
 
-
-
       {/* Content */}
       <Route path="/live" element={<Live />} />
       <Route path="/podcasts" element={<Podcasts />} />
@@ -91,9 +84,15 @@ function AppRoutes() {
 
       {/* Marketplace */}
       <Route path="/marketplace" element={<Marketplace />} />
-      <Route path="/profile/me" element={<Profile />} />
-      <Route path="/profile/:id" element={<Profile />} />
       <Route path="/checkout" element={<Checkout />} />
+
+      {/* General Access Routes */}
+      <Route path="/product/:id" element={<ProductDetails />} />
+      <Route path="/store/:creatorId" element={<CreatorStore />} />
+
+      {/* Creator-Specific Scope Routes */}
+      <Route path="/creator/:creatorId/product/:id" element={<ProductDetails />} />
+      <Route path="/creator/:creatorId/store" element={<CreatorStore />} />
 
       {/* Creator */}
       <Route path="/creator-dashboard" element={<CreatorDashboard />} />
