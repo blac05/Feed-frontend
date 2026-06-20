@@ -2,7 +2,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   Home, Search, Bell, Mail, Bookmark, User,
   Settings, Radio, ShoppingBag, Wallet, Users,
-  LogOut, Moon, Sun
+  LogOut, Moon, Sun, Sparkles, Megaphone // 🛠️ Added Sparkles and Megaphone icons
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../context/AuthContext";
@@ -24,6 +24,8 @@ export default function Sidebar() {
     { to: "/live", label: "Live", icon: Radio },
     { to: "/marketplace", label: "Marketplace", icon: ShoppingBag },
     { to: "/wallet", label: "Wallet", icon: Wallet },
+    { to: "/ai-studio", label: "AI Studio", icon: Sparkles },       // 🛠️ Added AI Studio
+    { to: "/ads-manager", label: "Ads Manager", icon: Megaphone },   // 🛠️ Added Ads Manager
     { to: "/profile/me", label: "Profile", icon: User },
     { to: "/settings", label: "Settings", icon: Settings },
   ];
@@ -42,7 +44,7 @@ export default function Sidebar() {
       </Link>
 
       {/* Nav Links */}
-      <nav className="flex flex-col gap-1 flex-1">
+      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto no-scrollbar">
         {navLinks.map(({ to, label, icon: Icon, badge }) => {
           const active = location.pathname === to;
           return (

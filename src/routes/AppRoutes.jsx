@@ -43,87 +43,91 @@ import VideoCall from "../pages/VideoCall";
 import Wallet from "../pages/Wallet";
 import PostDetail from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
+import Layout from "../components/Layout";
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Auth / Landing */}
+      {/* Auth / Landing - Flat Full Screen Layouts */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Main Feed */}
-      <Route path="/home" element={<Home />} />
-      <Route path="/explore" element={<Explore />} />
-      <Route path="/for-you" element={<ForYou />} />
+      {/* Core Application Frame Layout (Displays Sidebar, Main Feed, RightPanel) */}
+      <Route element={<Layout />}>
+        {/* Main Feed */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/for-you" element={<ForYou />} />
 
-      {/* User */}
-      <Route path="/profile/:id" element={<Profile />} />
-      <Route path="/notifications" element={<Notifications />} />
-      <Route path="/messages" element={<Messages />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/group-chat" element={<GroupChat />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/stories" element={<Stories />} />
-      <Route path="/reels" element={<Reels />} />
-      <Route path="/video-call" element={<VideoCall />} />
-      <Route path="/post/:id" element={<PostDetail />} />
-      <Route path="/hashtag/:tag" element={<HashtagPage />} />
+        {/* User */}
+        <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/group-chat" element={<GroupChat />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/stories" element={<Stories />} />
+        <Route path="/reels" element={<Reels />} />
+        <Route path="/video-call" element={<VideoCall />} />
+        <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/hashtag/:tag" element={<HashtagPage />} />
 
-      {/* Content */}
-      <Route path="/live" element={<Live />} />
-      <Route path="/podcasts" element={<Podcasts />} />
-      <Route path="/podcast/:id" element={<PodcastPlayer />} />
-      <Route path="/audio-spaces" element={<AudioSpaces />} />
-      <Route path="/space/:id" element={<SpaceRoom />} />
+        {/* Content */}
+        <Route path="/live" element={<Live />} />
+        <Route path="/podcasts" element={<Podcasts />} />
+        <Route path="/podcast/:id" element={<PodcastPlayer />} />
+        <Route path="/audio-spaces" element={<AudioSpaces />} />
+        <Route path="/space/:id" element={<SpaceRoom />} />
 
-      {/* Events */}
-      <Route path="/events" element={<Events />} />
-      <Route path="/events-hub" element={<EventsHub />} />
-      <Route path="/ticket-checkout" element={<TicketCheckout />} />
+        {/* Events */}
+        <Route path="/events" element={<Events />} />
+        <Route path="/events-hub" element={<EventsHub />} />
+        <Route path="/ticket-checkout" element={<TicketCheckout />} />
 
-      {/* Marketplace */}
-      <Route path="/marketplace" element={<Marketplace />} />
-      <Route path="/checkout" element={<Checkout />} />
+        {/* Marketplace */}
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/checkout" element={<Checkout />} />
 
-      {/* General Access Routes */}
-      <Route path="/product/:id" element={<ProductDetails />} />
-      <Route path="/store/:creatorId" element={<CreatorStore />} />
+        {/* General Access Routes */}
+        <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/store/:creatorId" element={<CreatorStore />} />
 
-      {/* Creator-Specific Scope Routes */}
-      <Route path="/creator/:creatorId/product/:id" element={<ProductDetails />} />
-      <Route path="/creator/:creatorId/store" element={<CreatorStore />} />
+        {/* Creator-Specific Scope Routes */}
+        <Route path="/creator/:creatorId/product/:id" element={<ProductDetails />} />
+        <Route path="/creator/:creatorId/store" element={<CreatorStore />} />
 
-      {/* Creator */}
-      <Route path="/creator-dashboard" element={<CreatorDashboard />} />
-      <Route path="/creator-store" element={<CreatorStore />} />
-      <Route path="/ai-studio" element={<AIStudio />} />
-      <Route path="/sponsorships" element={<Sponsorships />} />
+        {/* Creator Tools */}
+        <Route path="/creator-dashboard" element={<CreatorDashboard />} />
+        <Route path="/creator-store" element={<CreatorStore />} />
+        <Route path="/ai-studio" element={<AIStudio />} />
+        <Route path="/sponsorships" element={<Sponsorships />} />
 
-      {/* Wallet */}
-      <Route path="/wallet" element={<Wallet />} />
-      <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
+        {/* Wallet */}
+        <Route path="/wallet" element={<Wallet />} />
+        <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
 
-      {/* Business */}
-      <Route path="/business" element={<BusinessDashboard />} />
-      <Route path="/ads-manager" element={<AdsManager />} />
-      <Route path="/campaign-builder" element={<CampaignBuilder />} />
+        {/* Business */}
+        <Route path="/business" element={<BusinessDashboard />} />
+        <Route path="/ads-manager" element={<AdsManager />} />
+        <Route path="/campaign-builder" element={<CampaignBuilder />} />
 
-      {/* Communities */}
-      <Route path="/communities" element={<Communities />} />
-      <Route path="/community/:id" element={<CommunityDetails />} />
+        {/* Communities */}
+        <Route path="/communities" element={<Communities />} />
+        <Route path="/community/:id" element={<CommunityDetails />} />
 
-      {/* Admin */}
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/reports" element={<Reports />} />
-      <Route path="/admin/verifications" element={<VerificationRequests />} />
-      <Route path="/admin/analytics" element={<PlatformAnalytics />} />
+        {/* Admin */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/reports" element={<Reports />} />
+        <Route path="/admin/verifications" element={<VerificationRequests />} />
+        <Route path="/admin/analytics" element={<PlatformAnalytics />} />
+      </Route>
 
-      {/* 404 */}
+      {/* Global 404 Standalone Handler */}
       <Route
         path="*"
         element={
-          <div className="flex items-center justify-center h-screen">
+          <div className="flex items-center justify-center h-screen bg-black text-white">
             <h1 className="text-4xl font-bold">404 | Page Not Found</h1>
           </div>
         }
