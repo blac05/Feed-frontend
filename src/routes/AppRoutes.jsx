@@ -43,6 +43,8 @@ import VerificationRequests from "../pages/VerificationRequests";
 import VideoCall from "../pages/VideoCall";
 import Wallet from "../pages/Wallet";
 import PostDetail from "../pages/PostDetail";
+import HashtagPage from "../pages/HashtagPage";
+
 
 
 function AppRoutes() {
@@ -71,6 +73,8 @@ function AppRoutes() {
       <Route path="/reels" element={<Reels />} />
       <Route path="/video-call" element={<VideoCall />} />
       <Route path="/post/:id" element={<PostDetail />} />
+      <Route path="/hashtag/:tag" element={<HashtagPage />} />
+
 
 
       {/* Content */}
