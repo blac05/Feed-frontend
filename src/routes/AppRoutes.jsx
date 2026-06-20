@@ -42,6 +42,8 @@ import TicketCheckout from "../pages/TicketCheckout";
 import VerificationRequests from "../pages/VerificationRequests";
 import VideoCall from "../pages/VideoCall";
 import Wallet from "../pages/Wallet";
+import PostDetail from "../pages/PostDetail";
+
 
 function AppRoutes() {
   const { user } = useAuth();
@@ -68,6 +70,8 @@ function AppRoutes() {
       <Route path="/stories" element={<Stories />} />
       <Route path="/reels" element={<Reels />} />
       <Route path="/video-call" element={<VideoCall />} />
+      <Route path="/post/:id" element={<PostDetail />} />
+
 
       {/* Content */}
       <Route path="/live" element={<Live />} />
