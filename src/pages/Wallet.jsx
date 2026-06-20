@@ -1,4 +1,4 @@
-import Layout from "../components/MainLayout/Layout";
+import Layout from "../components/Layout/Layout";
 
 
 export default function Wallet() {

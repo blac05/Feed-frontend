@@ -99,6 +99,7 @@ function AppRoutes() {
       <Route path="/creator-store" element={<CreatorStore />} />
       <Route path="/ai-studio" element={<AIStudio />} />
       <Route path="/sponsorships" element={<Sponsorships />} />
+    
 
       {/* Wallet */}
       <Route path="/wallet" element={<Wallet />} />
