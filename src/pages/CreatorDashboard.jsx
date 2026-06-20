@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import Layout from "../components/Layout/Layout";
+import Layout from "../components/layout/Layout";
+
 
 export default function CreatorDashboard() {
   const [stats, setStats] = useState({
@@ -61,26 +62,23 @@ export default function CreatorDashboard() {
 
   return (
     <Layout>
-      <h1 className="text-3xl font-bold mb-6">Creator Dashboard</h1>
-      <div className="grid md:grid-cols-4 gap-5">
-        <div className="bg-white p-6 rounded-2xl shadow text-center">
-          <h3 className="mb-2">Total Followers</h3>
-          <h1 className="text-4xl font-bold">{stats.followers}</h1>
+      <h1 className="text-3xl font-bold mb-4">Creator Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-[#1e2732] p-6 rounded-2xl shadow-md text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Followers</h2>
+          <p className="text-3xl font-bold text-blue-600">{stats.followers}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow text-center">
-          <h3 className="mb-2">Total Gifts</h3>
-          <h1 className="text-4xl font-bold">{stats.gifts}</h1>
+        <div className="bg-white dark:bg-[#1e2732] p-6 rounded-2xl shadow-md text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Gifts Received</h2>
+          <p className="text-3xl font-bold text-green-600">{stats.gifts}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow text-center">
-          <h3 className="mb-2">Total Coins</h3>
-          <h1 className="text-4xl font-bold">{stats.coins}</h1>
+        <div className="bg-white dark:bg-[#1e2732] p-6 rounded-2xl shadow-md text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Coins Earned</h2>
+          <p className="text-3xl font-bold text-yellow-600">{stats.coins}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow text-center">
-          <h3 className="mb-2">Live Viewers</h3>
-          <h1 className="text-4xl font-bold">{stats.viewers}</h1>
+        <div className="bg-white dark:bg-[#1e2732] p-6 rounded-2xl shadow-md text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Current Viewers</h2>
+          <p className="text-3xl font-bold text-red-600">{stats.viewers}</p>
         </div>
       </div>
     </Layout>
