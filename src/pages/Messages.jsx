@@ -1,180 +1,307 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Send, Search } from "lucide-react";
-
-const contacts = [
-  { id: 1, name: "Alice", avatar: "https://i.pravatar.cc/150?img=1", last: "Hey there!", time: "2m", unread: 2 },
-  { id: 2, name: "Bob", avatar: "https://i.pravatar.cc/150?img=2", last: "See you later!", time: "1h", unread: 0 },
-  { id: 3, name: "Sarah", avatar: "https://i.pravatar.cc/150?img=3", last: "Thanks a lot!", time: "3h", unread: 1 },
-];
-
-const initMessages = [
-  { id: 1, from: "Alice", text: "Hi there!", time: "10:00 AM" },
-  { id: 2, from: "You", text: "Hello! How are you?", time: "10:01 AM" },
-  { id: 3, from: "Alice", text: "I'm good, thanks for asking!", time: "10:02 AM" },
-];
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, Search, ArrowLeft, CheckCheck } from "lucide-react";
+import { io } from "socket.io-client";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 export default function Messages() {
-  const [active, setActive] = useState(contacts[0]);
-  const [messages, setMessages] = useState(initMessages);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [contacts, setContacts] = useState([]);
+  const [activeContact, setActiveContact] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [activeChat, setActiveChat] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const typingTimerRef = useRef(null);
 
-  const send = () => {
-    if (!text.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), from: "You", text, time: "Now" }]);
-    setText("");
-  };
+  // Connect socket
+  useEffect(() => {
+    if (!user) return;
+    socketRef.current = io(
+      import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://feed-er99.onrender.com",
+      { auth: { token: localStorage.getItem("token") }, transports: ["websocket", "polling"] }
+    );
+    return () => socketRef.current?.disconnect();
+  }, [user]);
 
-  // Handle clicking a contact in the list
-  const handleContactClick = (c) => {
-    setSelectedContact(c);
-  };
+  // Load contacts from following list
+  useEffect(() => {
+    if (!user) return;
+    api.get("/users/me").then(res => {
+      // Load following as contacts
+      const following = res.data.user?.following || [];
+      if (following.length > 0) {
+        Promise.all(following.slice(0, 10).map(id => api.get(`/users/${id}`)))
+          .then(results => {
+            setContacts(results.map(r => r.data.user).filter(Boolean));
+          })
+          .catch(() => {});
+      }
+    }).catch(() => {});
+  }, [user]);
 
-  // Handle starting a chat
-  const handleStartChat = () => {
-    if (selectedContact) {
-      setActiveChat(selectedContact);
-      setSelectedContact(null);
+  // Listen for incoming messages
+  useEffect(() => {
+    if (!socketRef.current) return;
+    socketRef.current.on("receive-dm", (msg) => {
+      setMessages(prev => [...prev, msg]);
+    });
+    socketRef.current.on("user-typing", () => setTyping(true));
+    socketRef.current.on("user-stop-typing", () => setTyping(false));
+    return () => {
+      socketRef.current?.off("receive-dm");
+      socketRef.current?.off("user-typing");
+      socketRef.current?.off("user-stop-typing");
+    };
+  }, [socketRef.current]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Join DM room when active contact changes
+  useEffect(() => {
+    if (!activeContact || !user || !socketRef.current) return;
+    socketRef.current.emit("join-dm", {
+      userId: user._id,
+      otherUserId: activeContact._id,
+    });
+    setMessages([]); // Clear messages when switching contacts
+  }, [activeContact]);
+
+  // Search users
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await api.get(`/users/search?q=${searchQuery}`);
+        setSearchResults(res.data.users || []);
+      } catch (e) {}
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const selectContact = (contact) => {
+    setActiveContact(contact);
+    setShowMobileChat(true);
+    setSearchQuery("");
+    setSearchResults([]);
+    // Add to contacts if not already there
+    if (!contacts.find(c => c._id === contact._id)) {
+      setContacts(prev => [contact, ...prev]);
     }
   };
 
-  // Handle back to contacts list
-  const handleBackToContacts = () => {
-    setSelectedContact(null);
-    setActiveChat(null);
+  const send = () => {
+    if (!text.trim() || !activeContact) return;
+    const msg = {
+      id: Date.now(),
+      senderId: user._id,
+      text,
+      senderAvatar: user.avatar,
+      senderUsername: user.username,
+      time: new Date().toISOString(),
+    };
+    socketRef.current?.emit("send-dm", {
+      senderId: user._id,
+      receiverId: activeContact._id,
+      text,
+      senderAvatar: user.avatar,
+      senderUsername: user.username,
+    });
+    setMessages(prev => [...prev, msg]);
+    setText("");
   };
 
-  // Render when a contact is selected but chat not started yet
-  if (selectedContact && !activeChat) {
-    return (
-      <div className="max-w-4xl mx-auto py-6 px-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center space-y-4">
-          <img src={selectedContact.avatar} className="w-24 h-24 rounded-full object-cover mb-4" alt={selectedContact.name} />
-          <h2 className="text-xl font-semibold">{selectedContact.name}</h2>
-          <p className="text-center text-gray-600 mb-4">{selectedContact.last}</p>
-          <button
-            onClick={handleStartChat}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Start Chat
-          </button>
-          <button
-            onClick={handleBackToContacts}
-            className="mt-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition"
-          >
-            Back to Contacts
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleTyping = (e) => {
+    setText(e.target.value);
+    socketRef.current?.emit("typing", { senderId: user._id, receiverId: activeContact?._id });
+    clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      socketRef.current?.emit("stop-typing", { senderId: user._id, receiverId: activeContact?._id });
+    }, 1500);
+  };
 
-  // Render the chat interface if activeChat is set
-  if (activeChat) {
-    return (
-      <div className="max-w-4xl mx-auto py-6 px-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex h-[75vh] flex-col">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-            <img src={activeChat.avatar} className="w-9 h-9 rounded-full object-cover" alt={activeChat.name} />
-            <div>
-              <p className="font-semibold text-sm text-gray-800">{activeChat.name}</p>
-              <p className="text-xs text-green-500">Online</p>
-            </div>
+  const formatTime = (time) => {
+    return new Date(time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const ChatArea = () => (
+    <div className="flex-1 flex flex-col dark:bg-[#15202b]">
+      {/* Chat Header */}
+      {activeContact ? (
+        <>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d] flex items-center gap-3 bg-white dark:bg-[#15202b]">
             <button
-              onClick={handleBackToContacts}
-              className="ml-auto px-3 py-1 bg-gray-200 rounded-full text-xs hover:bg-gray-300 transition"
+              onClick={() => setShowMobileChat(false)}
+              className="md:hidden p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition"
             >
-              Back
+              <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
             </button>
+            <img src={activeContact.avatar || `https://ui-avatars.com/api/?name=${activeContact.username}&background=2563eb&color=fff`}
+              className="w-9 h-9 rounded-full object-cover" alt={activeContact.username} />
+            <div>
+              <p className="font-bold text-sm text-gray-800 dark:text-white">{activeContact.name || activeContact.username}</p>
+              {typing ? (
+                <p className="text-xs text-blue-500">typing...</p>
+              ) : (
+                <p className="text-xs text-green-500">Online</p>
+              )}
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.from === "You" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${
-                    msg.from === "You"
-                      ? "bg-gradient-to-r from-sky-500 to-blue-700 text-white rounded-br-sm"
-                      : "bg-gray-100 text-gray-800 rounded-bl-sm"
-                  }`}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white dark:bg-[#15202b]">
+            {messages.length === 0 && (
+              <div className="text-center py-16 text-gray-400">
+                <div className="text-5xl mb-3">👋</div>
+                <p className="font-semibold text-gray-600 dark:text-gray-400">Say hello to {activeContact.name || activeContact.username}!</p>
+              </div>
+            )}
+            {messages.map((msg, i) => {
+              const isMe = msg.senderId === user._id;
+              return (
+                <motion.div
+                  key={msg.id || i}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"} items-end gap-2`}
                 >
-                  <p>{msg.text}</p>
-                  <p className={`text-xs mt-1 ${msg.from === "You" ? "text-blue-200" : "text-gray-400"}`}>{msg.time}</p>
-                </div>
-              </motion.div>
-            ))}
+                  {!isMe && (
+                    <img
+                      src={activeContact.avatar || `https://ui-avatars.com/api/?name=${activeContact.username}&background=2563eb&color=fff`}
+                      className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                      alt="avatar"
+                    />
+                  )}
+                  <div className={`max-w-xs lg:max-w-md ${isMe ? "items-end" : "items-start"} flex flex-col`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm ${
+                      isMe
+                        ? "bg-gradient-to-r from-sky-500 to-blue-700 text-white rounded-br-sm"
+                        : "bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 rounded-bl-sm"
+                    }`}>
+                      <p>{msg.text}</p>
+                    </div>
+                    <div className={`flex items-center gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                      <p className="text-[10px] text-gray-400">{formatTime(msg.time)}</p>
+                      {isMe && <CheckCheck size={12} className="text-blue-400" />}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-100 flex gap-3">
+          <div className="px-4 py-3 border-t border-gray-100 dark:border-[#38444d] flex gap-3 bg-white dark:bg-[#15202b]">
             <input
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Type a message..."
-              className="flex-1 bg-gray-50 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onChange={handleTyping}
+              onKeyDown={e => e.key === "Enter" && send()}
+              placeholder="Start a message..."
+              className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
             <button
               onClick={send}
-              className="bg-gradient-to-r from-sky-500 to-blue-700 text-white p-2.5 rounded-xl hover:brightness-110 transition"
+              disabled={!text.trim()}
+              className="bg-gradient-to-r from-sky-500 to-blue-700 text-white p-2.5 rounded-xl hover:brightness-110 transition disabled:opacity-40"
             >
               <Send size={16} />
             </button>
           </div>
+        </>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:bg-[#15202b]">
+          <div className="text-6xl mb-4">💬</div>
+          <p className="font-bold text-gray-600 dark:text-gray-400 text-lg">Your Messages</p>
+          <p className="text-sm mt-1">Select a conversation or search for someone</p>
         </div>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 
-  // Main contacts list view
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex h-[75vh]">
-        {/* Sidebar */}
-        <div className="w-72 border-r border-gray-100 flex flex-col">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-bold text-gray-800 mb-3">Messages</h2>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
-              <input placeholder="Search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 rounded-xl text-sm focus:outline-none" />
-            </div>
+    <div className="h-screen flex dark:bg-[#15202b] overflow-hidden">
+      {/* Sidebar — contacts */}
+      <div className={`w-full md:w-80 border-r border-gray-100 dark:border-[#38444d] flex flex-col bg-white dark:bg-[#15202b] ${showMobileChat ? "hidden md:flex" : "flex"}`}>
+        {/* Header */}
+        <div className="px-4 py-4 border-b border-gray-100 dark:border-[#38444d]">
+          <h2 className="font-bold text-xl text-gray-900 dark:text-white mb-3">Messages</h2>
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search people..."
+              className="w-full pl-9 pr-3 py-2 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            />
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {contacts.map((c) => (
+        </div>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <div className="border-b border-gray-100 dark:border-[#38444d]">
+            {searchResults.map(u => (
               <div
-                key={c.id}
-                onClick={() => handleContactClick(c)}
-                className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition ${
-                  active.id === c.id ? "bg-blue-50" : ""
-                }`}
+                key={u._id}
+                onClick={() => selectContact(u)}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1e2732] cursor-pointer transition"
               >
-                <div className="relative">
-                  <img src={c.avatar} className="w-10 h-10 rounded-full object-cover" alt={c.name} />
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+                <img src={u.avatar || `https://ui-avatars.com/api/?name=${u.username}&background=2563eb&color=fff`}
+                  className="w-10 h-10 rounded-full object-cover" alt={u.username} />
+                <div>
+                  <p className="font-semibold text-sm text-gray-800 dark:text-white">{u.name || u.username}</p>
+                  <p className="text-xs text-gray-400">@{u.username}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between">
-                    <p className="font-semibold text-sm text-gray-800">{c.name}</p>
-                    <p className="text-xs text-gray-400">{c.time}</p>
-                  </div>
-                  <p className="text-xs text-gray-400 truncate">{c.last}</p>
-                </div>
-                {c.unread > 0 && (
-                  <span className="bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{c.unread}</span>
-                )}
               </div>
             ))}
           </div>
+        )}
+
+        {/* Contacts List */}
+        <div className="flex-1 overflow-y-auto">
+          {contacts.length === 0 && !searchQuery && (
+            <div className="text-center py-12 text-gray-400 px-4">
+              <p className="font-semibold text-sm">No conversations yet</p>
+              <p className="text-xs mt-1">Search for people to message</p>
+            </div>
+          )}
+          {contacts.map(c => (
+            <div
+              key={c._id}
+              onClick={() => selectContact(c)}
+              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition ${
+                activeContact?._id === c._id
+                  ? "bg-blue-50 dark:bg-blue-900/20"
+                  : "hover:bg-gray-50 dark:hover:bg-[#1e2732]"
+              }`}
+            >
+              <div className="relative flex-shrink-0">
+                <img src={c.avatar || `https://ui-avatars.com/api/?name=${c.username}&background=2563eb&color=fff`}
+                  className="w-11 h-11 rounded-full object-cover" alt={c.username} />
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white dark:border-[#15202b]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-800 dark:text-white truncate">{c.name || c.username}</p>
+                <p className="text-xs text-gray-400 truncate">@{c.username}</p>
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Chat Area */}
+      <div className={`flex-1 ${showMobileChat ? "flex" : "hidden md:flex"} flex-col`}>
+        <ChatArea />
       </div>
     </div>
   );
