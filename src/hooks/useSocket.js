@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 // Replace 'YOUR_AUTH_TOKEN' with your actual token if needed
-const authToken = "YOUR_AUTH_TOKEN"; // e.g., from environment variables
+const authToken = localStorage.getItem("token"); // e.g., from environment variables
 
 const socket = io("https://feed-er99.onrender.com", {
   auth: {
