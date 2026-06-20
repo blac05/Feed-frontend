@@ -43,7 +43,7 @@ import VideoCall from "../pages/VideoCall";
 import Wallet from "../pages/Wallet";
 import PostDetail from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 function AppRoutes() {
   return (
