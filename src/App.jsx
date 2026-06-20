@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
-import Sidebar from "./components/layout/Sidebar";
-import RightPanel from "./components/layout/RightPanel";
-import BottomNav from "./components/layout/BottomNav";
+import Sidebar from "./components/Layout/Sidebar";
+import RightPanel from "./components/Layout/RightPanel";
+import BottomNav from "./components/Layout/BottomNav";
 import SplashScreen from "./components/SplashScreen";
 import { useAuth } from "./context/AuthContext";
 import { useTheme } from "./context/ThemeContext";
