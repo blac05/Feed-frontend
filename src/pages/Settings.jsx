@@ -135,11 +135,11 @@ export default function Settings() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+        className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-5">
           <User size={18} className="text-blue-600" />
-          <h2 className="font-bold text-gray-800">Profile</h2>
+          <h2 className="font-bold text-gray-800 dark:text-white">Profile</h2>
         </div>
 
         {/* Avatar Setup */}
@@ -164,7 +164,7 @@ export default function Settings() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           </div>
           <div>
-            <p className="font-semibold text-gray-800">{user?.username || "Your Name"}</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-100">{user?.username || "Your Name"}</p>
             <p className="text-sm text-gray-400">{user?.email}</p>
             <button
               onClick={() => fileRef.current.click()}
@@ -188,7 +188,7 @@ export default function Settings() {
               <input
                 value={form[field.key]}
                 onChange={e => setForm({ ...form, [field.key]: e.target.value })}
-                className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15202b] text-gray-800 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
           ))}
@@ -199,7 +199,7 @@ export default function Settings() {
               onChange={e => setForm({ ...form, bio: e.target.value })}
               rows={3}
               maxLength={160}
-              className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              className="w-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#15202b] text-gray-800 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             />
             <p className="text-xs text-gray-400 text-right">{form.bio.length}/160</p>
           </div>
@@ -219,38 +219,38 @@ export default function Settings() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+        className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
           <Shield size={18} className="text-blue-600" />
-          <h2 className="font-bold text-gray-800">Verification Status</h2>
+          <h2 className="font-bold text-gray-800 dark:text-white">Verification Status</h2>
         </div>
 
         {verificationStatus === "verified" && (
-          <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-4">
+          <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl p-4">
             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
               <Shield size={18} className="text-white" />
             </div>
             <div>
-              <p className="font-semibold text-gray-800 text-sm">Your account is verified ✓</p>
-              <p className="text-xs text-blue-600">The organizational blue badge is active on your profile</p>
+              <p className="font-semibold text-gray-800 dark:text-white text-sm">Your account is verified ✓</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">The organizational blue badge is active on your profile</p>
             </div>
           </div>
         )}
 
         {verificationStatus === "pending" && (
-          <div className="flex items-center gap-3 bg-amber-50 rounded-xl p-4 border border-amber-100">
+          <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl p-4 border border-amber-100 dark:border-amber-900/40">
             <RefreshCw size={18} className="text-amber-600 animate-spin" />
             <div>
-              <p className="font-semibold text-amber-900 text-sm">Application Under Review</p>
-              <p className="text-xs text-amber-600">Our trust and safety team is reviewing your profile metrics.</p>
+              <p className="font-semibold text-amber-900 dark:text-amber-200 text-sm">Application Under Review</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">Our trust and safety team is reviewing your profile metrics.</p>
             </div>
           </div>
         )}
 
         {verificationStatus === "none" && (
           <div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Apply for an organizational blue verification badge. Eligible for creators, groups, and verified companies.
             </p>
             <button 
@@ -320,15 +320,15 @@ export default function Settings() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.16 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+        className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
           <Bell size={18} className="text-blue-600" />
-          <h2 className="font-bold text-gray-800">Notifications</h2>
+          <h2 className="font-bold text-gray-800 dark:text-white">Notifications</h2>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-800">Push Notifications</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Push Notifications</p>
             <p className="text-xs text-gray-400">Get notified about live feed events and wallet operations</p>
           </div>
           <button
@@ -345,20 +345,20 @@ export default function Settings() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.20 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+        className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
           <Lock size={18} className="text-blue-600" />
-          <h2 className="font-bold text-gray-800">Privacy & Security</h2>
+          <h2 className="font-bold text-gray-800 dark:text-white">Privacy & Security</h2>
         </div>
         <div className="space-y-2">
-          <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-700 transition">
+          <button className="w-full text-left px-4 py-3 bg-gray-50 dark:bg-[#15202b] hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 transition">
             🔑 Change Password
           </button>
-          <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-700 transition">
+          <button className="w-full text-left px-4 py-3 bg-gray-50 dark:bg-[#15202b] hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 transition">
             🛡️ Two-Factor Authentication
           </button>
-          <button className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-xl text-sm font-medium text-red-600 transition">
+          <button className="w-full text-left px-4 py-3 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 transition">
             🗑️ Delete Account
           </button>
         </div>
