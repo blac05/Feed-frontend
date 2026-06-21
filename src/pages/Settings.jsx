@@ -1,27 +1,32 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { User, Bell, Lock, Camera, Shield, RefreshCw } from "lucide-react";
+import { User, Bell, Lock, Camera, Shield, RefreshCw, Moon, Sun, Download } from "lucide-react"; 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext"; 
 import useUpload from "../hooks/useUpload";
 
 export default function Settings() {
   const { setUser: setAuthUser } = useAuth();
   const { uploadAvatar, uploading: uploadingAvatar } = useUpload();
+  const { dark, toggleTheme } = useTheme(); 
 
+  // Core profile & infrastructure states
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ username: "", bio: "", location: "", website: "" });
   const [notifications, setNotifications] = useState(true);
-  
-  // Action state tracks
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [applyingVerification, setApplyingVerification] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState("none"); // "none" | "pending" | "verified"
-  
+  const [verificationStatus, setVerificationStatus] = useState("none"); 
   const [avatar, setAvatar] = useState(null);
   const fileRef = useRef();
 
+  // PWA Installation States
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  // Fetch initial profile configurations
   useEffect(() => {
     api.get("/users/me")
       .then(res => {
@@ -36,7 +41,6 @@ export default function Settings() {
         setAvatar(userData.avatar || null);
         setNotifications(userData.pushNotifications !== false);
         
-        // Map backend verification state dynamically
         if (userData.isVerified) {
           setVerificationStatus("verified");
         } else if (userData.verificationPending) {
@@ -45,6 +49,33 @@ export default function Settings() {
       })
       .catch((err) => console.error("Failed to load user profile options:", err));
   }, []);
+
+  // PWA Installation Listener
+  useEffect(() => {
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    });
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+  }, []);
+
+  // PWA Action Controller
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+      if (typeof toast !== "undefined") {
+        toast({ message: "Feed installed! 🎉", type: "success" });
+      } else {
+        console.log("Feed installed! 🎉");
+      }
+    }
+  };
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
@@ -58,7 +89,6 @@ export default function Settings() {
     if (url) setAvatar(url);
   };
 
-  // Persists standard text and image changes
   const save = async () => {
     setSaving(true);
     try {
@@ -74,7 +104,6 @@ export default function Settings() {
     }
   };
 
-  // Dispatches a live request to your backend verification route engine
   const handleApplyVerification = async () => {
     setApplyingVerification(true);
     try {
@@ -87,23 +116,22 @@ export default function Settings() {
     }
   };
 
-  // Toggles and updates user notification configurations atomically
   const handleNotificationToggle = async () => {
     const nextState = !notifications;
     setNotifications(nextState);
     try {
       await api.put("/users/me", { pushNotifications: nextState });
     } catch (err) {
-      console.error("Notification preference synchronization error:", err);
-      setNotifications(notifications); // Rollback if server rejects request
+      console.error("Notification sync error:", err);
+      setNotifications(notifications);
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-4">
-      <h1 className="text-xl font-bold text-gray-800">Settings</h1>
+      <h1 className="text-xl font-bold text-gray-800 dark:text-white">Settings</h1>
 
-      {/* Profile Panel */}
+      {/* Profile Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -114,7 +142,7 @@ export default function Settings() {
           <h2 className="font-bold text-gray-800">Profile</h2>
         </div>
 
-        {/* Avatar Display Frame */}
+        {/* Avatar Setup */}
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <img
@@ -148,7 +176,7 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Text Form Structure */}
+        {/* Info Inputs */}
         <div className="space-y-3">
           {[
             { key: "username", label: "Username" },
@@ -186,7 +214,7 @@ export default function Settings() {
         </button>
       </motion.div>
 
-      {/* Verification Management Card */}
+      {/* Verification Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -223,7 +251,7 @@ export default function Settings() {
         {verificationStatus === "none" && (
           <div>
             <p className="text-sm text-gray-600 mb-4">
-              Apply for an organizational blue verification badge. Eligible for public creators, groups, and verified companies.
+              Apply for an organizational blue verification badge. Eligible for creators, groups, and verified companies.
             </p>
             <button 
               onClick={handleApplyVerification}
@@ -236,11 +264,62 @@ export default function Settings() {
         )}
       </motion.div>
 
+      {/* Integrated Standalone Dark Mode Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] shadow-sm p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          {dark ? <Moon size={18} className="text-blue-600" /> : <Sun size={18} className="text-blue-600" />}
+          <h2 className="font-bold text-gray-800 dark:text-white">Appearance</h2>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Dark Mode</p>
+            <p className="text-xs text-gray-400">Switch between light and dark</p>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className={`w-12 h-6 rounded-full transition-colors relative ${dark ? "bg-blue-600" : "bg-gray-200"}`}
+          >
+            <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-transform ${dark ? "translate-x-6" : "translate-x-0.5"}`} />
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Integrated Premium PWA Install Banner */}
+      {(installPrompt || !isInstalled) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+              <Download size={22} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-white">Install Feed App</p>
+              <p className="text-blue-200 text-xs mt-0.5">Add to home screen for the best experience</p>
+            </div>
+          </div>
+          <button
+            onClick={handleInstall}
+            className="mt-4 w-full bg-white text-blue-600 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition"
+          >
+            Install Now
+          </button>
+        </motion.div>
+      )}
+
       {/* Notifications Module */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.16 }}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
@@ -261,11 +340,11 @@ export default function Settings() {
         </div>
       </motion.div>
 
-      {/* Security Operations Frame */}
+      {/* Security Features Panel */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
+        transition={{ delay: 0.20 }}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
       >
         <div className="flex items-center gap-2 mb-4">
