@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Image, Video, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
-  X, Trash2, Flag, Link, Bookmark, BarChart2, Quote
+  X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +23,62 @@ const badgeColor = {
   prominent: "text-yellow-500",
   popstar: "text-pink-500",
 };
+
+function LiveStrip() {
+  const [streams, setStreams] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get("/live").then(res => setStreams(res.data.streams?.slice(0, 5) || [])).catch(() => {});
+  }, []);
+
+  if (streams.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Live Now</span>
+      </div>
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+        {streams.map(stream => (
+          <motion.div
+            key={stream._id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={() => navigate("/live")}
+            className="flex-shrink-0 cursor-pointer group"
+          >
+            <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-red-500">
+              <img
+                src={stream.host?.avatar || `https://ui-avatars.com/api/?name=${stream.host?.username}&background=dc2626&color=fff`}
+                className="w-full h-full object-cover group-hover:scale-110 transition"
+                alt="host"
+              />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                LIVE
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 truncate w-16">
+              {stream.host?.username}
+            </p>
+          </motion.div>
+        ))}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => navigate("/live")}
+          className="flex-shrink-0 cursor-pointer flex flex-col items-center"
+        >
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-red-400 transition">
+            <Radio size={20} className="text-gray-400" />
+          </div>
+          <p className="text-xs text-gray-400 text-center mt-1">See all</p>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
 
 function VerifiedBadge({ user }) {
   if (!user?.isVerified) return null;
@@ -113,13 +169,11 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   const isOwn = localPost.author?._id === currentUserId;
   const menuRef = useRef();
 
-  // Keep local component state in sync with external shifts
   useEffect(() => {
     setLocalPost(post);
     setBookmarked(post.isBookmarked || false);
   }, [post]);
 
-  // Click outside handler for dropdown menu
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -194,7 +248,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
           alt="avatar"
         />
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-wrap">
               <span className="font-bold text-sm text-gray-900 dark:text-white">
@@ -206,7 +259,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
             </div>
 
-            {/* Three-dot context menu */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
@@ -251,7 +303,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             </div>
           </div>
 
-          {/* Hashtag-aware text mapping */}
           <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
             {localPost.content.split(/(\s+)/).map((word, i) => {
               if (word.startsWith("#")) {
@@ -270,7 +321,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             })}
           </p>
 
-          {/* Image attachments */}
           {localPost.image && (
             <img
               src={localPost.image}
@@ -279,10 +329,8 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             />
           )}
 
-          {/* Quote post preview */}
           {localPost.quotedPost && <QuotePost post={localPost.quotedPost} />}
 
-          {/* Poll Render Block */}
           {localPost.poll?.options?.length > 0 && (
             <PollCard
               post={localPost}
@@ -291,9 +339,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             />
           )}
 
-          {/* Lower Action Layout */}
           <div className="flex items-center justify-between mt-3 -ml-2">
-            {/* Integrated Reaction Picker Plugin */}
             <ReactionPicker
               postId={localPost._id}
               likes={localPost.likes || []}
@@ -310,7 +356,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-xs">{localPost.comments?.length || 0}</span>
             </button>
 
-            {/* Nested Quote / Repost Action Menu */}
             <div className="relative">
               <button
                 onClick={() => setShowQuote(!showQuote)}
@@ -362,7 +407,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             </button>
           </div>
 
-          {/* Quote post input tray */}
           <AnimatePresence>
             {showQuoteInput && (
               <motion.div
@@ -380,7 +424,6 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             )}
           </AnimatePresence>
 
-          {/* Comments Nested Layout */}
           <AnimatePresence>
             {showComments && (
               <motion.div
@@ -521,7 +564,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen dark:bg-[#15202b]">
-      {/* Navigation Layer */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-[#15202b]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#38444d]">
         <div className="flex">
           {tabs.map(tab => (
@@ -540,10 +582,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Highlights / Stories Stream */}
       <StoriesBar />
+      <LiveStrip />
 
-      {/* Editor Block */}
       <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
         <div className="flex gap-3">
           <img
@@ -579,7 +620,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Poll Creation Builder */}
             <AnimatePresence>
               {showPoll && (
                 <CreatePoll
@@ -636,7 +676,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Missing context empty view state */}
       {!fetching && posts.length === 0 && activeTab === "Following" && (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">👥</div>
@@ -645,7 +684,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Timeline Stream Execution Target */}
       {fetching ? (
         <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
       ) : posts.length === 0 && activeTab !== "Following" ? (
@@ -668,4 +706,3 @@ export default function Home() {
     </div>
   );
 }
-
