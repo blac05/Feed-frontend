@@ -480,38 +480,101 @@ export default function Home() {
   const { toast } = useToast();
   const { uploadImage, uploading: uploadingImage } = useUpload();
 
+  // ==========================================
+  // FEED PAGINATION STATE & REFS
+  // ==========================================
   const [posts, setPosts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [fetching, setFetching] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
-  const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState("For You");
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [pollData, setPollData] = useState(null);
   const [showPoll, setShowPoll] = useState(false);
+  
   const fileRef = useRef();
   const textRef = useRef();
+  const observerRef = useRef(null);
+  const sentinelRef = useRef(null);
 
-  useEffect(() => {
-    fetchPosts();
-  }, [activeTab]);
+  // ==========================================
+  // PAGINATED FETCH IMPLEMENTATION
+  // ==========================================
+  const fetchPosts = async (pageNum = 1, reset = false) => {
+    if (pageNum === 1) setFetching(true);
+    else setLoadingMore(true);
 
-  const fetchPosts = async () => {
-    setFetching(true);
     try {
-      let endpoint = "/posts";
-      if (activeTab === "Following") endpoint = "/posts/following";
-      if (activeTab === "Trending") endpoint = "/posts/trending";
+      let endpoint = `/posts?page=${pageNum}&limit=15`;
+      if (activeTab === "Following") endpoint = `/posts/following?page=${pageNum}&limit=15`;
+      if (activeTab === "News") endpoint = `/posts/news?page=${pageNum}&limit=15`; // Configured for explicit news routes
+      if (activeTab === "Trending") endpoint = `/posts/trending`;
+
       const res = await api.get(endpoint);
-      setPosts(res.data.posts || []);
+      const newPosts = res.data.posts || [];
+
+      if (reset || pageNum === 1) {
+        setPosts(newPosts);
+      } else {
+        setPosts(prev => {
+          const ids = new Set(prev.map(p => p._id));
+          return [...prev, ...newPosts.filter(p => !ids.has(p._id))];
+        });
+      }
+
+      // Trending endpoint is unpaginated data stream
+      if (activeTab === "Trending") {
+        setHasMore(false);
+      } else {
+        setHasMore(res.data.hasMore ?? newPosts.length === 15);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Pagination feed error:", err);
     } finally {
       setFetching(false);
+      setLoadingMore(false);
     }
   };
 
+  // ==========================================
+  // EFFECT LIFECYCLES
+  // ==========================================
+
+  // Triggers fresh stack reset upon Tab swaps
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    fetchPosts(1, true);
+  }, [activeTab]);
+
+  // Infinite Scroll Intersection Observer Linkage
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !fetching) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchPosts(nextPage);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
+    return () => observerRef.current?.disconnect();
+  }, [hasMore, loadingMore, fetching, page, activeTab]);
+
+  // ==========================================
+  // INTERACTION WORKFLOW HANDLERS
+  // ==========================================
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -585,6 +648,7 @@ export default function Home() {
       <StoriesBar />
       <LiveStrip />
 
+      {/* Creation Box */}
       <div className="bg-white dark:bg-[#15202b] border-b border-gray-100 dark:border-[#38444d] px-4 py-3">
         <div className="flex gap-3">
           <img
@@ -676,32 +740,52 @@ export default function Home() {
         </div>
       </div>
 
-      {!fetching && posts.length === 0 && activeTab === "Following" && (
-        <div className="text-center py-24 text-gray-400">
-          <div className="text-6xl mb-4">👥</div>
-          <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts from people you follow</p>
-          <p className="text-sm mt-1">Follow more people to see their posts here</p>
-        </div>
-      )}
-
+      {/* Main Feed Content Streams */}
       {fetching ? (
         <><PostSkeleton /><PostSkeleton /><PostSkeleton /><PostSkeleton /></>
-      ) : posts.length === 0 && activeTab !== "Following" ? (
-        <div className="text-center py-24 text-gray-400">
-          <div className="text-6xl mb-4">📭</div>
-          <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts yet</p>
-          <p className="text-sm mt-1">Be the first to share something!</p>
-        </div>
+      ) : posts.length === 0 ? (
+        activeTab === "Following" ? (
+          <div className="text-center py-24 text-gray-400">
+            <div className="text-6xl mb-4">👥</div>
+            <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts from people you follow</p>
+            <p className="text-sm mt-1">Follow more people to see their posts here</p>
+          </div>
+        ) : (
+          <div className="text-center py-24 text-gray-400">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="text-lg font-bold text-gray-700 dark:text-gray-300">No posts yet</p>
+            <p className="text-sm mt-1">Be the first to share something!</p>
+          </div>
+        )
       ) : (
-        posts.map((post, i) => (
-          <PostCard
-            key={post._id || i}
-            post={post}
-            onDelete={handleDelete}
-            onReact={handleReact}
-            currentUserId={user?._id}
-          />
-        ))
+        <>
+          {posts.map((post, i) => (
+            <PostCard
+              key={post._id || i}
+              post={post}
+              onDelete={handleDelete}
+              onReact={handleReact}
+              currentUserId={user?._id}
+            />
+          ))}
+
+          {/* Infinite scroll marker element */}
+          <div ref={sentinelRef} className="h-4" />
+
+          {/* Lazy Feed Spindle */}
+          {loadingMore && (
+            <div className="flex justify-center py-6">
+              <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
+          {/* Terminal Pagination Status Indicator */}
+          {!hasMore && (
+            <div className="text-center py-8 text-gray-400 text-sm font-medium">
+              You've reached the end 🎉
+            </div>
+          )}
+        </>
       )}
     </div>
   );

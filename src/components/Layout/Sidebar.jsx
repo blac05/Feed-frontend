@@ -2,30 +2,43 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   Home, Search, Bell, Mail, Bookmark, User,
   Settings, Radio, ShoppingBag, Wallet, Users,
-  LogOut, Moon, Sun, Sparkles, Megaphone // 🛠️ Added Sparkles and Megaphone icons
+  LogOut, Moon, Sun, BarChart2, Calendar
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useSocket } from "../../context/SocketContext";
+import { useState, useEffect } from "react";
+import api from "../../api/axios";
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { dark, toggleTheme } = useTheme();
+  const { unreadCount } = useSocket();
+  const [dbUnread, setDbUnread] = useState(0);
+
+  useEffect(() => {
+    api.get("/notifications")
+      .then(res => setDbUnread(res.data.unreadCount || 0))
+      .catch(() => {});
+  }, [location.pathname]);
+
+  const totalUnread = unreadCount + dbUnread;
 
   const navLinks = [
     { to: "/home", label: "Home", icon: Home },
     { to: "/explore", label: "Explore", icon: Search },
-    { to: "/notifications", label: "Notifications", icon: Bell, badge: true },
+    { to: "/notifications", label: "Notifications", icon: Bell, badge: totalUnread > 0 ? totalUnread : null },
     { to: "/messages", label: "Messages", icon: Mail },
     { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
     { to: "/communities", label: "Communities", icon: Users },
+    { to: "/events", label: "Events", icon: Calendar },
     { to: "/live", label: "Live", icon: Radio },
     { to: "/marketplace", label: "Marketplace", icon: ShoppingBag },
     { to: "/wallet", label: "Wallet", icon: Wallet },
-    { to: "/ai-studio", label: "AI Studio", icon: Sparkles },       // 🛠️ Added AI Studio
-    { to: "/ads-manager", label: "Ads Manager", icon: Megaphone },   // 🛠️ Added Ads Manager
+    { to: "/creator-dashboard", label: "Creator", icon: BarChart2 },
     { to: "/profile/me", label: "Profile", icon: User },
     { to: "/settings", label: "Settings", icon: Settings },
   ];
@@ -44,14 +57,14 @@ export default function Sidebar() {
       </Link>
 
       {/* Nav Links */}
-      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto no-scrollbar">
+      <nav className="flex flex-col gap-1 flex-1 overflow-y-auto scrollbar-hide">
         {navLinks.map(({ to, label, icon: Icon, badge }) => {
-          const active = location.pathname === to;
+          const active = location.pathname === to || location.pathname.startsWith(to + "/");
           return (
             <Link
               key={to}
               to={to}
-              className={`flex items-center gap-4 px-3 py-3 rounded-2xl transition-all group ${
+              className={`flex items-center gap-4 px-3 py-3 rounded-2xl transition-all group relative ${
                 active
                   ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-bold"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e2732]"
@@ -60,13 +73,32 @@ export default function Sidebar() {
               <Icon size={22} className={active ? "text-blue-600" : "text-gray-700 dark:text-gray-300"} />
               <span className="text-[15px] hidden xl:block">{label}</span>
               {badge && (
-                <span className="ml-auto bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center hidden xl:flex">
-                  3
+                <span className="ml-auto bg-blue-600 text-white text-xs min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center hidden xl:flex">
+                  {badge > 99 ? "99+" : badge}
                 </span>
+              )}
+              {/* Mobile badge dot */}
+              {badge && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full xl:hidden" />
               )}
             </Link>
           );
         })}
+
+        {/* Admin link if admin */}
+        {user?.role === "admin" && (
+          <Link
+            to="/admin"
+            className={`flex items-center gap-4 px-3 py-3 rounded-2xl transition-all ${
+              location.pathname === "/admin"
+                ? "bg-red-50 dark:bg-red-900/20 text-red-600 font-bold"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e2732]"
+            }`}
+          >
+            <span className="text-lg">🛡️</span>
+            <span className="text-[15px] hidden xl:block font-semibold">Admin Panel</span>
+          </Link>
+        )}
       </nav>
 
       {/* Theme Toggle */}
@@ -94,7 +126,10 @@ export default function Sidebar() {
 
       {/* User Footer */}
       {user && (
-        <div className="mt-4 flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1e2732] cursor-pointer transition">
+        <div
+          onClick={() => navigate("/profile/me")}
+          className="mt-4 flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1e2732] cursor-pointer transition"
+        >
           <img
             src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=2563eb&color=fff`}
             className="w-9 h-9 rounded-full object-cover flex-shrink-0"
@@ -104,7 +139,10 @@ export default function Sidebar() {
             <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{user.name || user.username}</p>
             <p className="text-xs text-gray-400 truncate">@{user.username}</p>
           </div>
-          <button onClick={handleLogout} className="hidden xl:block text-gray-400 hover:text-red-500 transition">
+          <button
+            onClick={e => { e.stopPropagation(); handleLogout(); }}
+            className="hidden xl:block text-gray-400 hover:text-red-500 transition ml-auto"
+          >
             <LogOut size={16} />
           </button>
         </div>

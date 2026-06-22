@@ -17,12 +17,18 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
     try {
-      const res = await api.post("/auth/login", { email, password });
+      // .trim() prevents submission failures due to accidental trailing spaces
+      const res = await api.post("/auth/login", { 
+        email: email.trim(), 
+        password 
+      });
       login(res.data.token, res.data.user);
       navigate("/home");
     } catch (err) {
-      setError("Invalid email or password.");
+      // Dynamically catches API errors, falling back to a default message
+      setError(err.response?.data?.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +79,24 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
+        {/* Cleaned & Balanced Footer Links */}
+        <div className="mt-6 text-center">
+          <Link to="/forgot-password" className="text-sm text-blue-500 hover:underline">
+            Forgot your password?
+          </Link>
+        </div>
+
+        <p className="text-center text-gray-400 text-sm mt-4">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline">Sign up</Link>
+          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+            Sign up
+          </Link>
         </p>
-        <p className="text-center mt-3">
-          <Link to="/" className="text-gray-300 text-xs hover:text-gray-400">← Back to home</Link>
+        
+        <p className="text-center mt-4">
+          <Link to="/" className="text-gray-300 text-xs hover:text-gray-400 transition">
+            ← Back to home
+          </Link>
         </p>
       </motion.div>
     </div>
