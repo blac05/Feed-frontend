@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, TrendingUp, CheckCircle } from "lucide-react";
+import { Search, TrendingUp, CheckCircle, Film } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useToast } from "../../context/ToastContext";
@@ -32,6 +32,7 @@ const fallbackTrending = [
 export default function RightPanel() {
   const [query, setQuery] = useState("");
   const [trending, setTrending] = useState(fallbackTrending);
+  const [reels, setReels] = useState([]); // State added to store video feed data
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -45,8 +46,30 @@ export default function RightPanel() {
       .catch(() => {});
   }, []);
 
+  // Integrated Video Post Lifecycle for Reels Widget
+  useEffect(() => {
+    // Try to load real reels from posts with videos
+    api.get("/posts")
+      .then(res => {
+        const videoPosts = (res.data.posts || []).filter(p => p.video && p.video.length > 0);
+        if (videoPosts.length > 0) {
+          const formatted = videoPosts.map(p => ({
+            _id: p._id,
+            videoUrl: p.video,
+            caption: p.content,
+            author: p.author,
+            likes: p.likes || [],
+            comments: p.comments || [],
+            music: "Original Audio - " + (p.author?.username || ""),
+          }));
+          setReels(prev => [...formatted, ...prev.filter(r => !r._id?.toString().match(/^\d+$/))]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto h-full py-2">
+    <div className="flex flex-col gap-4 overflow-y-auto h-full py-2 scrollbar-hide">
       {/* Search */}
       <div className="relative">
         <Search size={16} className="absolute left-4 top-3.5 text-gray-400" />
@@ -59,7 +82,7 @@ export default function RightPanel() {
         />
       </div>
 
-      {/* Trending Hashtags — real data */}
+      {/* Trending Hashtags */}
       <div className="bg-gray-50 dark:bg-[#1e2732] rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d]">
           <div className="flex items-center gap-2">
@@ -67,7 +90,7 @@ export default function RightPanel() {
             <h2 className="font-bold text-gray-800 dark:text-white">Trending for you</h2>
           </div>
         </div>
-        {trending.slice(0, 7).map((item, i) => (
+        {trending.slice(0, 5).map((item, i) => (
           <div
             key={i}
             onClick={() => navigate(`/hashtag/${item.tag}`)}
@@ -85,6 +108,40 @@ export default function RightPanel() {
           Show more
         </div>
       </div>
+
+      {/* Dynamic Trending Reels Spotlight Widget */}
+      {reels.length > 0 && (
+        <div className="bg-gray-50 dark:bg-[#1e2732] rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d]">
+            <div className="flex items-center gap-2">
+              <Film size={16} className="text-purple-500" />
+              <h2 className="font-bold text-gray-800 dark:text-white">Trending Reels</h2>
+            </div>
+          </div>
+          <div className="p-3 grid grid-cols-3 gap-2">
+            {reels.slice(0, 3).map((reel) => (
+              <div 
+                key={reel._id} 
+                onClick={() => navigate(`/reels?id=${reel._id}`)}
+                className="relative aspect-[9/16] bg-black rounded-xl overflow-hidden cursor-pointer group"
+              >
+                <video 
+                  src={reel.videoUrl} 
+                  className="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition duration-300" 
+                  muted 
+                  playsInline
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute bottom-1.5 left-1.5 right-1.5 min-w-0">
+                  <p className="text-[10px] text-white truncate font-semibold">
+                    @{reel.author?.username || "user"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Who to Follow */}
       <div className="bg-gray-50 dark:bg-[#1e2732] rounded-2xl overflow-hidden">
