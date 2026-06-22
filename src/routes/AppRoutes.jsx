@@ -46,6 +46,10 @@ import Wallet from "../pages/Wallet";
 import PostDetail from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
 import Bookmarks from "../pages/Bookmarks";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
+import VerifyEmail from "../pages/VerifyEmail";
+import AdminDashboard from "../pages/AdminDashboard";
 
 // Global Command Palette Plugin for rapid dashboard switching
 function CommandPalette() {
@@ -148,6 +152,10 @@ function AppRoutes() {
         <Route path="/post/:id" element={<PostDetail />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />
         <Route path="/bookmarks" element={<Bookmarks />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
+<Route path="/verify-email/:token" element={<VerifyEmail />} />
+<Route path="/admin" element={<AdminDashboard />} />
 
         {/* Content & Streaming */}
         <Route path="/live" element={<Live />} />
