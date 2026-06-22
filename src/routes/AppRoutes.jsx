@@ -1,57 +1,73 @@
+import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { Search, Terminal, Home as HomeIcon, User, Wallet as WalletIcon, ShoppingBag, Radio } from "lucide-react";
 
+// Auth / Recovery & Basic Vectors
 import Landing from "../pages/Landing";
-import AdminDashboard from "../pages/AdminDashboard";
-import AdsManager from "../pages/AdsManager";
-import AIStudio from "../pages/AIStudio";
-import AudioSpaces from "../pages/AudioSpaces";
-import BusinessDashboard from "../pages/BusinessDashboard";
-import CampaignBuilder from "../pages/CampaignBuilder";
-import Chat from "../pages/Chat";
-import Checkout from "../pages/Checkout";
-import Communities from "../pages/Communities";
-import CommunityDetails from "../pages/CommunityDetails";
-import CreatorDashboard from "../pages/CreatorDashboard";
-import CreatorStore from "../pages/CreatorStore";
-import Events from "../pages/Events";
-import EventsHub from "../pages/EventsHub";
-import Explore from "../pages/Explore";
-import ForYou from "../pages/ForYou";
-import GroupChat from "../pages/GroupChat";
-import Home from "../pages/Home";
-import Live from "../pages/Live";
 import Login from "../pages/Login";
-import Marketplace from "../pages/Marketplace";
-import Messages from "../pages/Messages";
-import Notifications from "../pages/Notifications";
-import PlatformAnalytics from "../pages/PlatformAnalytics";
-import PodcastPlayer from "../pages/PodcastPlayer";
-import Podcasts from "../pages/Podcasts";
-import ProductDetails from "../pages/ProductDetails";
-import Profile from "../pages/Profile";
-import Reels from "../pages/Reels";
 import Register from "../pages/Register";
-import Reports from "../pages/Reports";
-import RevenueAnalytics from "../pages/RevenueAnalytics";
-import Settings from "../pages/Settings";
-import SpaceRoom from "../pages/SpaceRoom";
-import Sponsorships from "../pages/Sponsorships";
-import Stories from "../pages/Stories";
-import TicketCheckout from "../pages/TicketCheckout";
-import VerificationRequests from "../pages/VerificationRequests";
-import VideoCall from "../pages/VideoCall";
-import Wallet from "../pages/Wallet";
-import PostDetail from "../pages/PostDetail";
-import HashtagPage from "../pages/HashtagPage";
-import Bookmarks from "../pages/Bookmarks";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import VerifyEmail from "../pages/VerifyEmail";
-import AdminDashboard from "../pages/AdminDashboard";
 
-// Global Command Palette Plugin for rapid dashboard switching
+// Feed & Profile Navigation
+import Home from "../pages/Home";
+import Explore from "../pages/Explore";
+import ForYou from "../pages/ForYou";
+import Profile from "../pages/Profile";
+import PostDetail from "../pages/PostDetail";
+import HashtagPage from "../pages/HashtagPage";
+import Bookmarks from "../pages/Bookmarks";
+import Notifications from "../pages/Notifications";
+import Settings from "../pages/Settings";
+
+// Messaging & Core Social Systems
+import Chat from "../pages/Chat";
+import Messages from "../pages/Messages";
+import GroupChat from "../pages/GroupChat";
+import VideoCall from "../pages/VideoCall";
+import Stories from "../pages/Stories";
+import Reels from "../pages/Reels";
+
+// Multi-Media, Streaming & Live Events
+import Live from "../pages/Live";
+import Podcasts from "../pages/Podcasts";
+import PodcastPlayer from "../pages/PodcastPlayer";
+import AudioSpaces from "../pages/AudioSpaces";
+import SpaceRoom from "../pages/SpaceRoom";
+import Events from "../pages/Events";
+import EventsHub from "../pages/EventsHub";
+import TicketCheckout from "../pages/TicketCheckout";
+
+// Marketplace E-Commerce Core
+import Marketplace from "../pages/Marketplace";
+import ProductDetails from "../pages/ProductDetails";
+import CreatorStore from "../pages/CreatorStore";
+import Checkout from "../pages/Checkout";
+
+// Creator Engine & Asset Toolkits
+import CreatorDashboard from "../pages/CreatorDashboard";
+import AIStudio from "../pages/AIStudio";
+import Sponsorships from "../pages/Sponsorships";
+import Wallet from "../pages/Wallet";
+import RevenueAnalytics from "../pages/RevenueAnalytics";
+
+// Commercial & Business Operations
+import BusinessDashboard from "../pages/BusinessDashboard";
+import AdsManager from "../pages/AdsManager";
+import CampaignBuilder from "../pages/CampaignBuilder";
+import Communities from "../pages/Communities";
+import CommunityDetails from "../pages/CommunityDetails";
+
+// Platform Oversight & Admin Controls
+import AdminDashboard from "../pages/AdminDashboard";
+import Reports from "../pages/Reports";
+import VerificationRequests from "../pages/VerificationRequests";
+import PlatformAnalytics from "../pages/PlatformAnalytics";
+
+// ==========================================
+// COMMAND PALETTE ENGINE CORE
+// ==========================================
 function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -124,40 +140,44 @@ function CommandPalette() {
   );
 }
 
+// ==========================================
+// SYSTEM APPLICATION ROUTING TREE
+// ==========================================
 function AppRoutes() {
   return (
     <>
       <CommandPalette />
       <Routes>
-        {/* Auth / Landing */}
+        {/* Auth Lifecycle Vectors */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-        {/* Main Feed */}
+        {/* Global Consumption Feeds */}
         <Route path="/home" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/for-you" element={<ForYou />} />
 
-        {/* User */}
+        {/* Dynamic Profiling & Personal Engine */}
         <Route path="/profile/:id" element={<Profile />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/bookmarks" element={<Bookmarks />} />
+        <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/hashtag/:tag" element={<HashtagPage />} />
+
+        {/* Immersive Social Operations */}
         <Route path="/messages" element={<Messages />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/group-chat" element={<GroupChat />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/video-call" element={<VideoCall />} />
         <Route path="/stories" element={<Stories />} />
         <Route path="/reels" element={<Reels />} />
-        <Route path="/video-call" element={<VideoCall />} />
-        <Route path="/post/:id" element={<PostDetail />} />
-        <Route path="/hashtag/:tag" element={<HashtagPage />} />
-        <Route path="/bookmarks" element={<Bookmarks />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password/:token" element={<ResetPassword />} />
-<Route path="/verify-email/:token" element={<VerifyEmail />} />
-<Route path="/admin" element={<AdminDashboard />} />
 
-        {/* Content & Streaming */}
+        {/* Content Streaming & Live Audio Arrays */}
         <Route path="/live" element={<Live />} />
         <Route path="/live/:id" element={<Live />} />
         <Route path="/podcasts" element={<Podcasts />} />
@@ -165,56 +185,52 @@ function AppRoutes() {
         <Route path="/audio-spaces" element={<AudioSpaces />} />
         <Route path="/space/:id" element={<SpaceRoom />} />
 
-        {/* Events */}
+        {/* Experiential & Ticketing Systems */}
         <Route path="/events" element={<Events />} />
         <Route path="/events-hub" element={<EventsHub />} />
         <Route path="/ticket-checkout" element={<TicketCheckout />} />
 
-        {/* Marketplace */}
+        {/* Distributed Marketplace Contexts */}
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/checkout" element={<Checkout />} />
-
-        {/* General Access Routes */}
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/store/:creatorId" element={<CreatorStore />} />
 
-        {/* Creator-Specific Scope Routes */}
+        {/* Extended Vendor Overrides */}
         <Route path="/creator/:creatorId/product/:id" element={<ProductDetails />} />
         <Route path="/creator/:creatorId/store" element={<CreatorStore />} />
 
-        {/* Creator Tools */}
+        {/* Advanced Creator Tooling */}
         <Route path="/creator-dashboard" element={<CreatorDashboard />} />
         <Route path="/creator-store" element={<CreatorStore />} />
         <Route path="/ai-studio" element={<AIStudio />} />
         <Route path="/sponsorships" element={<Sponsorships />} />
-
-        {/* Wallet */}
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
 
-        {/* Business */}
+        {/* Corporate Advertising Dashboards */}
         <Route path="/business" element={<BusinessDashboard />} />
         <Route path="/ads-manager" element={<AdsManager />} />
         <Route path="/campaign-builder" element={<CampaignBuilder />} />
 
-        {/* Communities */}
+        {/* Community Hub Networks */}
         <Route path="/communities" element={<Communities />} />
         <Route path="/community/:id" element={<CommunityDetails />} />
 
-        {/* Admin */}
+        {/* High-Level Admin Moderation Console */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/reports" element={<Reports />} />
         <Route path="/admin/verifications" element={<VerificationRequests />} />
         <Route path="/admin/analytics" element={<PlatformAnalytics />} />
 
-        {/* 404 */}
+        {/* Catch-All Error Redirection */}
         <Route
           path="*"
-          element={
-            <div className="flex items-center justify-center h-screen">
-              <h1 className="text-4xl font-bold">404 | Page Not Found</h1>
+          element (
+            <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-[#15202b]">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">404 | Page Not Found</h1>
             </div>
-          }
+          )
         />
       </Routes>
     </>
