@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Image, Video, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
-  X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio
+  X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio,
+  Sparkles // Added Sparkles icon
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -15,6 +16,7 @@ import ReactionPicker from "../components/feed/ReactionPicker";
 import QuotePost from "../components/feed/QuotePost";
 import PollCard from "../components/feed/PollCard";
 import CreatePoll from "../components/feed/CreatePoll";
+import AIComposer from "../components/feed/AIComposer"; // Added AIComposer import
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -497,6 +499,7 @@ export default function Home() {
   const [expanded, setExpanded] = useState(false);
   const [pollData, setPollData] = useState(null);
   const [showPoll, setShowPoll] = useState(false);
+  const [showAI, setShowAI] = useState(false); // Added state for AI panel toggle
   
   const fileRef = useRef();
   const textRef = useRef();
@@ -513,7 +516,7 @@ export default function Home() {
     try {
       let endpoint = `/posts?page=${pageNum}&limit=15`;
       if (activeTab === "Following") endpoint = `/posts/following?page=${pageNum}&limit=15`;
-      if (activeTab === "News") endpoint = `/posts/news?page=${pageNum}&limit=15`; // Configured for explicit news routes
+      if (activeTab === "News") endpoint = `/posts/news?page=${pageNum}&limit=15`;
       if (activeTab === "Trending") endpoint = `/posts/trending`;
 
       const res = await api.get(endpoint);
@@ -528,7 +531,6 @@ export default function Home() {
         });
       }
 
-      // Trending endpoint is unpaginated data stream
       if (activeTab === "Trending") {
         setHasMore(false);
       } else {
@@ -546,14 +548,12 @@ export default function Home() {
   // EFFECT LIFECYCLES
   // ==========================================
 
-  // Triggers fresh stack reset upon Tab swaps
   useEffect(() => {
     setPage(1);
     setHasMore(true);
     fetchPosts(1, true);
   }, [activeTab]);
 
-  // Infinite Scroll Intersection Observer Linkage
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
 
@@ -602,6 +602,7 @@ export default function Home() {
       setImageFile(null);
       setPollData(null);
       setShowPoll(false);
+      setShowAI(false);
       setExpanded(false);
       toast({ message: "Post published!", type: "success" });
     } catch (err) {
@@ -701,7 +702,7 @@ export default function Home() {
                   exit={{ opacity: 0, height: 0 }}
                   className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-[#38444d]"
                 >
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 items-center">
                     <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition cursor-pointer">
                       <Image size={18} />
                       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
@@ -718,7 +719,32 @@ export default function Home() {
                     >
                       <BarChart2 size={18} />
                     </button>
+
+                    {/* Integrated AI Assistant Toggle Plugin */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowAI(!showAI)}
+                        className={`flex items-center gap-1 text-sm font-medium px-2.5 py-1.5 rounded-full transition ${
+                          showAI
+                            ? "bg-purple-100 dark:bg-purple-900/20 text-purple-600"
+                            : "text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                        }`}
+                      >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline text-xs">AI</span>
+                      </button>
+
+                      <AnimatePresence>
+                        {showAI && (
+                          <AIComposer
+                            onInsert={(aiText) => { setText(aiText); setExpanded(true); }}
+                            onClose={() => setShowAI(false)}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
+
                   <div className="flex items-center gap-3">
                     {text.length > 0 && (
                       <span className={`text-xs font-medium ${text.length > 260 ? "text-red-500" : "text-gray-400 dark:text-gray-500"}`}>
@@ -769,17 +795,14 @@ export default function Home() {
             />
           ))}
 
-          {/* Infinite scroll marker element */}
           <div ref={sentinelRef} className="h-4" />
 
-          {/* Lazy Feed Spindle */}
           {loadingMore && (
             <div className="flex justify-center py-6">
               <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
-          {/* Terminal Pagination Status Indicator */}
           {!hasMore && (
             <div className="text-center py-8 text-gray-400 text-sm font-medium">
               You've reached the end 🎉
