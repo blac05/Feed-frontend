@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, UserX, VolumeX, Key, User, Bell } from "lucide-react";
-import api from "../utils/api"; // Your Axios utility instance
+import api from "../api/axios"; // Your Axios utility instance
 import { useToast } from "../context/ToastContext";
 
 export default function Settings() {
