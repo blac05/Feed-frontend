@@ -2,10 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Image, Video, Smile, MessageCircle,
+  Image, Video as VideoIcon, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
   X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio,
-  Sparkles // Added Sparkles icon
+  Sparkles 
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -16,7 +16,7 @@ import ReactionPicker from "../components/feed/ReactionPicker";
 import QuotePost from "../components/feed/QuotePost";
 import PollCard from "../components/feed/PollCard";
 import CreatePoll from "../components/feed/CreatePoll";
-import AIComposer from "../components/feed/AIComposer"; // Added AIComposer import
+import AIComposer from "../components/feed/AIComposer"; 
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -331,6 +331,16 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
             />
           )}
 
+          {localPost.video && (
+            <video
+              src={localPost.video}
+              className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100 dark:border-[#38444d]"
+              controls
+              preload="metadata"
+              playsInline
+            />
+          )}
+
           {localPost.quotedPost && <QuotePost post={localPost.quotedPost} />}
 
           {localPost.poll?.options?.length > 0 && (
@@ -480,7 +490,7 @@ const tabs = ["For You", "Following", "News", "Trending"];
 export default function Home() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { uploadImage, uploading: uploadingImage } = useUpload();
+  const { uploadImage, uploadVideo, uploading: uploadingImage, progress: uploadProgress } = useUpload();
 
   // ==========================================
   // FEED PAGINATION STATE & REFS
@@ -496,13 +506,17 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("For You");
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [pollData, setPollData] = useState(null);
   const [showPoll, setShowPoll] = useState(false);
-  const [showAI, setShowAI] = useState(false); // Added state for AI panel toggle
+  const [showAI, setShowAI] = useState(false); 
   
   const fileRef = useRef();
   const textRef = useRef();
+  const videoRef = useRef();
+  const videoInputRef = useRef();
   const observerRef = useRef(null);
   const sentinelRef = useRef(null);
 
@@ -584,15 +598,33 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handleVideo = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ message: "Video must be under 100MB", type: "error" });
+      return;
+    }
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+    setImage(null);
+    setImageFile(null);
+  };
+
   const submit = async () => {
     if (!text.trim()) return;
     setPosting(true);
     try {
       let imageUrl = null;
-      if (imageFile) {
+      let videoUrl = null;
+
+      if (videoFile) {
+        videoUrl = await uploadVideo(videoFile);
+      } else if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
-      const payload = { content: text, image: imageUrl };
+
+      const payload = { content: text, image: imageUrl, video: videoUrl };
       if (pollData) payload.poll = pollData;
       
       const res = await api.post("/posts", payload);
@@ -600,6 +632,8 @@ export default function Home() {
       setText("");
       setImage(null);
       setImageFile(null);
+      setVideoFile(null);
+      setVideoPreview(null);
       setPollData(null);
       setShowPoll(false);
       setShowAI(false);
@@ -685,6 +719,28 @@ export default function Home() {
               </div>
             )}
 
+            {videoPreview && (
+              <div className="relative mt-2">
+                <video
+                  src={videoPreview}
+                  className="rounded-2xl w-full max-h-60 object-cover border border-gray-100 dark:border-[#38444d]"
+                  controls
+                />
+                <button
+                  onClick={() => { setVideoFile(null); setVideoPreview(null); }}
+                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
+                >
+                  <X size={14} />
+                </button>
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/30 rounded-2xl flex flex-col items-center justify-center gap-2">
+                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="text-white text-xs font-bold">{uploadProgress}%</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <AnimatePresence>
               {showPoll && (
                 <CreatePoll
@@ -707,9 +763,12 @@ export default function Home() {
                       <Image size={18} />
                       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
                     </label>
-                    <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
-                      <Video size={18} />
-                    </button>
+
+                    <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition cursor-pointer">
+                      <VideoIcon size={18} />
+                      <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideo} />
+                    </label>
+
                     <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
                       <Smile size={18} />
                     </button>
