@@ -226,11 +226,11 @@ function AppRoutes() {
         {/* Catch-All Error Redirection */}
         <Route
           path="*"
-          element (
+          element={
             <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-[#15202b]">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">404 | Page Not Found</h1>
             </div>
-          )
+          }
         />
       </Routes>
     </>
