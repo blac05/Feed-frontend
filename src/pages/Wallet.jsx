@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft,
   Coins, TrendingUp, Gift, CreditCard, X, CheckCircle,
-  Clock, AlertCircle
+  Clock, AlertCircle, Shield, Landmark, Smartphone, RefreshCw
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -28,6 +28,183 @@ const COIN_PACKAGES = [
   { coins: 3000, price: 2000, label: "Pro", bonus: 1000 },
 ];
 
+const paymentMethods = [
+  {
+    id: "card",
+    name: "Credit / Debit Card",
+    icon: CreditCard,
+    subtitle: "Visa, Mastercard, Amex, Discover"
+  },
+  {
+    id: "bank",
+    name: "Bank Transfer",
+    icon: Landmark,
+    subtitle: "Direct bank account transfer"
+  },
+  {
+    id: "ussd",
+    name: "USSD Payment",
+    icon: Smartphone,
+    subtitle: "Quick bank shortcode payment"
+  },
+  {
+    id: "paypal",
+    name: "PayPal",
+    icon: Wallet,
+    subtitle: "Global online wallet"
+  },
+  {
+    id: "applepay",
+    name: "Apple Pay",
+    icon: Smartphone,
+    subtitle: "Fast checkout on Apple devices"
+  },
+  {
+    id: "googlepay",
+    name: "Google Pay",
+    icon: Smartphone,
+    subtitle: "Secure Android payments"
+  },
+  {
+    id: "samsungpay",
+    name: "Samsung Pay",
+    icon: Smartphone,
+    subtitle: "Pay with Samsung Wallet"
+  },
+  {
+    id: "paystack",
+    name: "Paystack",
+    icon: RefreshCw,
+    subtitle: "Card, Bank & Mobile Money"
+  },
+  {
+    id: "flutterwave",
+    name: "Flutterwave",
+    icon: RefreshCw,
+    subtitle: "African payments gateway"
+  },
+  {
+    id: "momo",
+    name: "Mobile Money",
+    icon: Smartphone,
+    subtitle: "MTN MoMo, Airtel Money, Telecel Cash"
+  },
+  {
+    id: "mpesa",
+    name: "M-Pesa",
+    icon: Smartphone,
+    subtitle: "East Africa mobile payments"
+  },
+  {
+    id: "alipay",
+    name: "Alipay",
+    icon: Wallet,
+    subtitle: "China's leading digital wallet"
+  },
+  {
+    id: "wechatpay",
+    name: "WeChat Pay",
+    icon: MessageCircle,
+    subtitle: "Chinese social wallet payments"
+  },
+  {
+    id: "upi",
+    name: "UPI",
+    icon: Landmark,
+    subtitle: "India instant bank payments"
+  },
+  {
+    id: "paytm",
+    name: "Paytm",
+    icon: Wallet,
+    subtitle: "India wallet & UPI payments"
+  },
+  {
+    id: "pix",
+    name: "PIX",
+    icon: Zap,
+    subtitle: "Brazil instant payments"
+  },
+  {
+    id: "mercadopago",
+    name: "Mercado Pago",
+    icon: Wallet,
+    subtitle: "Latin America digital wallet"
+  },
+  {
+    id: "klarna",
+    name: "Klarna",
+    icon: Receipt,
+    subtitle: "Buy now, pay later"
+  },
+  {
+    id: "afterpay",
+    name: "Afterpay",
+    icon: Receipt,
+    subtitle: "Australia & global BNPL"
+  },
+  {
+    id: "ideal",
+    name: "iDEAL",
+    icon: Landmark,
+    subtitle: "Netherlands bank payments"
+  },
+  {
+    id: "sofort",
+    name: "Sofort",
+    icon: Landmark,
+    subtitle: "European instant bank transfer"
+  },
+  {
+    id: "sepa",
+    name: "SEPA Transfer",
+    icon: Landmark,
+    subtitle: "European bank payments"
+  },
+  {
+    id: "crypto",
+    name: "Cryptocurrency",
+    icon: Coins,
+    subtitle: "BTC, ETH, USDT and more"
+  },
+  {
+    id: "giftcard",
+    name: "Gift Card",
+    icon: Gift,
+    subtitle: "Redeem prepaid gift cards"
+  },
+  {
+    id: "coin",
+    name: "Buy Coins",
+    icon: Coins,
+    subtitle: "Purchase coins for gifts & tips"
+  },
+  {
+    id: "cashapp",
+    name: "Cash App Pay",
+    icon: Wallet,
+    subtitle: "Popular in the USA"
+  },
+  {
+    id: "venmo",
+    name: "Venmo",
+    icon: Wallet,
+    subtitle: "Peer-to-peer payments"
+  },
+  {
+    id: "zelle",
+    name: "Zelle",
+    icon: Landmark,
+    subtitle: "US instant bank transfer"
+  },
+  {
+    id: "test",
+    name: "Test Top-Up (Dev)",
+    icon: Shield,
+    subtitle: "Simulate payment in development"
+  }
+];
+
 export default function Wallet() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,7 +214,9 @@ export default function Wallet() {
   const [showTopUp, setShowTopUp] = useState(false);
   const [showCoinShop, setShowCoinShop] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState(1000);
+  const [selectedMethod, setSelectedMethod] = useState("card");
   const [processing, setProcessing] = useState(false);
+  const [checkoutState, setCheckoutState] = useState("input"); // 'input' | 'verifying' | 'success'
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
@@ -56,26 +235,63 @@ export default function Wallet() {
     }
   };
 
-  const handleTopUp = async () => {
+  // Ultra-Modern Native / Inline Gateway Checkout Handler
+  const handleModernCheckout = async () => {
+    if (!topUpAmount || topUpAmount < 100) {
+      return toast({ message: "Minimum transaction amount is ₦100", type: "error" });
+    }
+
     setProcessing(true);
     try {
-      const res = await api.post("/wallet/topup", {
+      const res = await api.post("/wallet/topup/initialize", {
         amount: topUpAmount,
         email: user?.email,
+        paymentChannel: selectedMethod
       });
 
-      if (res.data.authorization_url) {
-        window.open(res.data.authorization_url, "_blank");
-        setShowTopUp(false);
-        toast({ message: "Complete payment in the opened tab", type: "info" });
+      // Instead of standard window.open redirect, we use the ultra-modern inline system
+      if (res.data.accessCode) {
+        setCheckoutState("verifying");
+        
+        // Dynamically load Paystack Inline SDK if not present and open popup frame natively
+        const PaystackPop = (await import("@paystack/inline-js")).default;
+        const popup = new PaystackPop();
+        
+        popup.resumeTransaction(res.data.accessCode, {
+          onSuccess: async (response) => {
+            // Verify payment directly on completion hook
+            await verifyTransactionOnBackend(response.reference);
+          },
+          onCancel: () => {
+            setCheckoutState("input");
+            setProcessing(false);
+            toast({ message: "Transaction window closed by user", type: "info" });
+          }
+        });
       } else {
-        // Fallback to test top-up
+        // Safe developmental fallback
         await handleTestTopUp(topUpAmount);
       }
     } catch (e) {
-      toast({ message: "Payment initialization failed", type: "error" });
+      setCheckoutState("input");
+      toast({ message: "Secure gateway initialization failed", type: "error" });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const verifyTransactionOnBackend = async (reference) => {
+    try {
+      const res = await api.post("/wallet/topup/verify", { reference });
+      if (res.data.success) {
+        setWallet(res.data.wallet);
+        setCheckoutState("success");
+        await loadWallet();
+        toast({ message: "Payment verified securely!", type: "success" });
+      }
+    } catch (err) {
+      setCheckoutState("input");
+      toast({ message: "Verification failed. Please contact support if debited.", type: "error" });
     }
   };
 
@@ -86,6 +302,7 @@ export default function Wallet() {
       setWallet(res.data.wallet);
       setShowTopUp(false);
       setShowCoinShop(false);
+      setCheckoutState("input");
       await loadWallet();
       toast({ message: `₦${amount || topUpAmount} added to wallet! 🎉`, type: "success" });
     } catch (e) {
@@ -117,8 +334,8 @@ export default function Wallet() {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Wallet</h1>
           </div>
           <button
-            onClick={() => setShowTopUp(true)}
-            className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition"
+            onClick={() => { setCheckoutState("input"); setShowTopUp(true); }}
+            className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700 transition shadow-sm shadow-blue-500/20"
           >
             <Plus size={14} /> Top Up
           </button>
@@ -132,16 +349,16 @@ export default function Wallet() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-4 text-white col-span-2"
+            className="bg-gradient-to-br from-blue-600 to-blue-900 rounded-2xl p-5 text-white col-span-2 shadow-lg shadow-blue-600/10"
           >
             <p className="text-blue-200 text-xs font-medium mb-1">Total Balance</p>
             <p className="text-3xl font-extrabold">₦{(wallet?.balance || 0).toLocaleString()}</p>
-            <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
               <div>
                 <p className="text-blue-200 text-xs">Total Earned</p>
                 <p className="font-bold text-sm">₦{(wallet?.totalEarned || 0).toLocaleString()}</p>
               </div>
-              <div className="w-px h-8 bg-blue-400" />
+              <div className="w-px h-8 bg-white/20" />
               <div>
                 <p className="text-blue-200 text-xs">Total Spent</p>
                 <p className="font-bold text-sm">₦{(wallet?.totalSpent || 0).toLocaleString()}</p>
@@ -149,12 +366,12 @@ export default function Wallet() {
             </div>
           </motion.div>
 
-          {/* Coins */}
+          {/* Coins Balance */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-4 text-white"
+            className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/10"
           >
             <div className="flex items-center gap-2 mb-1">
               <Coins size={16} />
@@ -163,30 +380,31 @@ export default function Wallet() {
             <p className="text-2xl font-extrabold">{(wallet?.coins || 0).toLocaleString()}</p>
             <button
               onClick={() => setShowCoinShop(true)}
-              className="mt-2 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded-full transition"
+              className="mt-2 text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full font-medium transition"
             >
               Buy more
             </button>
           </motion.div>
 
-          {/* Quick actions */}
+          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-[#1e2732] rounded-2xl p-4 border border-gray-100 dark:border-[#38444d] flex flex-col gap-2"
+            className="bg-white dark:bg-[#1e2732] rounded-2xl p-4 border border-gray-100 dark:border-[#38444d] flex flex-col justify-center gap-2"
           >
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quick Actions</p>
             <button
-              onClick={() => setShowTopUp(true)}
-              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition"
+              onClick={() => { setCheckoutState("input"); setShowTopUp(true); }}
+              className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition"
             >
-              <ArrowDownLeft size={14} /> Add Money
+              <ArrowDownLeft size={15} /> Add Money
             </button>
             <button
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+              className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60"
+              disabled
             >
-              <ArrowUpRight size={14} /> Withdraw
+              <ArrowUpRight size={15} /> Withdraw
             </button>
           </motion.div>
         </div>
@@ -210,21 +428,21 @@ export default function Wallet() {
 
         {activeTab === "overview" && (
           <div className="space-y-3">
-            {/* Coin packages teaser */}
+            {/* Coin Shop Teaser Banner */}
             <div
               onClick={() => setShowCoinShop(true)}
-              className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-4 cursor-pointer hover:shadow-md transition"
+              className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border border-amber-100 dark:border-amber-900/30 rounded-2xl p-4 cursor-pointer hover:shadow-md transition"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-gray-900 dark:text-white">🪙 Buy Coins</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Send gifts on live streams, tip creators</p>
+                  <p className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">🪙 Coin Marketplace</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Send interactive gifts on live streams and tip core creators</p>
                 </div>
-                <div className="text-yellow-500 font-bold text-sm">Shop →</div>
+                <div className="text-orange-500 font-bold text-sm bg-white dark:bg-[#15202b] px-2.5 py-1 rounded-full shadow-sm">Shop →</div>
               </div>
             </div>
 
-            {/* Recent transactions preview */}
+            {/* Recent Activity Section */}
             <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d]">
                 <p className="font-bold text-gray-900 dark:text-white text-sm">Recent Activity</p>
@@ -267,7 +485,7 @@ export default function Wallet() {
               {transactions.length > 5 && (
                 <button
                   onClick={() => setActiveTab("transactions")}
-                  className="w-full text-center py-3 text-blue-500 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#253341] transition"
+                  className="w-full text-center py-3 text-blue-500 text-sm font-medium border-t border-gray-50 dark:border-[#253341] hover:bg-gray-50 dark:hover:bg-[#253341] transition"
                 >
                   View all transactions
                 </button>
@@ -320,7 +538,7 @@ export default function Wallet() {
                       )}
                       {tx.coins > 0 && (
                         <p className="text-sm text-yellow-500 font-medium">
-                          {isCredit ? "+" : "-"}{tx.coins}🪙
+                          {isCredit ? "+" : "-"} {tx.coins}🪙
                         </p>
                       )}
                     </div>
@@ -332,76 +550,178 @@ export default function Wallet() {
         )}
       </div>
 
-      {/* Top Up Modal */}
+      {/* Advanced Top Up Modal */}
       <AnimatePresence>
         {showTopUp && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center sm:items-center p-0 sm:p-4"
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
-              className="bg-white dark:bg-[#15202b] rounded-t-3xl w-full max-w-lg p-6"
+              initial={{ y: "100%", scale: 1 }}
+              sm={{ y: 0, scale: 0.95 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: "100%", scale: 0.95 }}
+              transition={{ type: "spring", damping: 26, stiffness: 220 }}
+              className="bg-white dark:bg-[#15202b] rounded-t-3xl sm:rounded-2xl w-full max-w-md p-6 overflow-hidden max-h-[92vh] flex flex-col"
             >
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-xl text-gray-900 dark:text-white">Add Money</h2>
-                <button onClick={() => setShowTopUp(false)}><X size={22} className="text-gray-500" /></button>
-              </div>
-
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Select amount to add to your wallet</p>
-
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {TOPUP_AMOUNTS.map(amount => (
-                  <button
-                    key={amount}
-                    onClick={() => setTopUpAmount(amount)}
-                    className={`py-3 rounded-2xl font-bold text-sm transition border-2 ${
-                      topUpAmount === amount
-                        ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-600"
-                        : "border-gray-200 dark:border-[#38444d] text-gray-700 dark:text-gray-300 hover:border-blue-300"
-                    }`}
-                  >
-                    ₦{amount.toLocaleString()}
-                  </button>
-                ))}
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="100"
-                    placeholder="Custom"
-                    className="w-full py-3 px-3 rounded-2xl text-sm border-2 border-gray-200 dark:border-[#38444d] bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-400"
-                    onChange={e => setTopUpAmount(Number(e.target.value))}
-                  />
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Shield size={18} className="text-blue-600" />
+                  <h2 className="font-bold text-xl text-gray-900 dark:text-white">Secure Checkout</h2>
                 </div>
+                <button onClick={() => setShowTopUp(false)} disabled={processing}>
+                  <X size={22} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition" />
+                </button>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 mb-4 flex items-center gap-2">
-                <Coins size={16} className="text-yellow-500" />
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  You'll get <span className="font-bold text-yellow-500">{(topUpAmount * 10).toLocaleString()} coins</span> with this top-up
-                </p>
-              </div>
+              {/* Step 1: Input Setup and Method Selection */}
+              {checkoutState === "input" && (
+                <div className="space-y-4 overflow-y-auto pr-1">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide block mb-2">Select Top-Up Amount</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {TOPUP_AMOUNTS.map(amount => (
+                        <button
+                          key={amount}
+                          onClick={() => setTopUpAmount(amount)}
+                          className={`py-3 rounded-xl font-bold text-sm transition border-2 ${
+                            topUpAmount === amount
+                              ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600"
+                              : "border-gray-100 dark:border-[#38444d] text-gray-700 dark:text-gray-300 hover:border-gray-200"
+                          }`}
+                        >
+                          ₦{amount.toLocaleString()}
+                        </button>
+                      ))}
+                      <div className="relative col-span-3 mt-1">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-sm">₦</span>
+                        <input
+                          type="number"
+                          min="100"
+                          value={topUpAmount || ""}
+                          placeholder="Enter custom custom amount"
+                          className="w-full py-3 pl-8 pr-4 rounded-xl text-sm font-semibold border-2 border-gray-100 dark:border-[#38444d] bg-transparent text-gray-800 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                          onChange={e => setTopUpAmount(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-              <button
-                onClick={handleTopUp}
-                disabled={processing || !topUpAmount || topUpAmount < 100}
-                className="w-full bg-gradient-to-r from-sky-500 to-blue-700 text-white py-3.5 rounded-2xl font-bold disabled:opacity-40 hover:brightness-110 transition mb-3"
-              >
-                {processing ? "Processing..." : `Pay ₦${topUpAmount?.toLocaleString() || 0} with Paystack`}
-              </button>
+                  {/* Modern Payment Selector */}
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide block mb-2">Default Payment Method</label>
+                    <div className="space-y-2">
+                      {PAYMENT_METHODS.map(method => {
+                        const MethodIcon = method.icon;
+                        return (
+                          <div
+                            key={method.id}
+                            onClick={() => setSelectedMethod(method.id)}
+                            className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${
+                              selectedMethod === method.id
+                                ? "border-blue-600 bg-blue-50/20 dark:bg-blue-950/10"
+                                : "border-gray-100 dark:border-[#38444d] hover:bg-gray-50/50 dark:hover:bg-[#1e2732]/50"
+                            }`}
+                          >
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                              selectedMethod === method.id ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-[#253341] text-gray-500 dark:text-gray-400"
+                            }`}>
+                              <MethodIcon size={18} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-gray-800 dark:text-white truncate">{method.name}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{method.subtitle}</p>
+                            </div>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                              selectedMethod === method.id ? "border-blue-600 bg-blue-600" : "border-gray-300 dark:border-gray-600"
+                            }`}>
+                              {selectedMethod === method.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-              <button
-                onClick={() => handleTestTopUp(topUpAmount)}
-                disabled={processing}
-                className="w-full border-2 border-gray-200 dark:border-[#38444d] text-gray-600 dark:text-gray-400 py-3 rounded-2xl font-medium text-sm hover:bg-gray-50 dark:hover:bg-[#1e2732] transition"
-              >
-                🧪 Test Top-Up (Dev Mode)
-              </button>
+                  <div className="bg-amber-500/10 dark:bg-amber-500/5 rounded-xl p-3 flex items-center gap-2.5 border border-amber-500/20">
+                    <Coins size={16} className="text-amber-500 flex-shrink-0" />
+                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                      Conversion rate: You will receive <span className="font-bold text-amber-500 dark:text-amber-400">{(topUpAmount * 10).toLocaleString()} coins</span> immediately after successful transaction completion.
+                    </p>
+                  </div>
+
+                  <div className="pt-2 space-y-2">
+                    <button
+                      onClick={handleModernCheckout}
+                      disabled={processing || !topUpAmount || topUpAmount < 100}
+                      className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-40 shadow-md shadow-blue-600/10 transition flex items-center justify-center gap-2 text-sm"
+                    >
+                      {processing ? "Initializing Gateway..." : `Proceed to Secure Checkout`}
+                    </button>
+                    <button
+                      onClick={() => handleTestTopUp(topUpAmount)}
+                      disabled={processing}
+                      className="w-full text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-center py-1 transition underline decoration-dotted"
+                    >
+                      Bypass secure flow via Sandbox Sandbox Mode
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Inline Active Verification Frame */}
+              {checkoutState === "verifying" && (
+                <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="relative w-14 h-14">
+                    <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/30 rounded-full" />
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                      className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center text-blue-600">
+                      <RefreshCw size={18} className="animate-pulse" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Awaiting Gateway Confirmation</h3>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
+                      Please fulfill your payment requirements within the embedded secure inline checkout frame interface modal overlay.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setCheckoutState("input")}
+                    className="text-xs font-semibold text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/20 px-3 py-1.5 rounded-lg transition"
+                  >
+                    Cancel / Go Back
+                  </button>
+                </div>
+              )}
+
+              {/* Step 3: Success Confirmation Visual Block */}
+              {checkoutState === "success" && (
+                <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-14 h-14 bg-green-50 dark:bg-green-950/30 text-green-500 rounded-full flex items-center justify-center shadow-inner shadow-green-500/10">
+                    <CheckCircle size={32} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Wallet Credited Successfully!</h3>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Your transactional reference has been settled natively. Balance metrics are now current.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowTopUp(false)}
+                    className="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-3 rounded-xl text-sm transition hover:brightness-110"
+                  >
+                    Dismiss Receipt
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -414,7 +734,7 @@ export default function Wallet() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center"
           >
             <motion.div
               initial={{ y: "100%" }}
@@ -428,11 +748,11 @@ export default function Wallet() {
                   <Coins size={22} className="text-yellow-500" />
                   <h2 className="font-bold text-xl text-gray-900 dark:text-white">Coin Shop</h2>
                 </div>
-                <button onClick={() => setShowCoinShop(false)}><X size={22} className="text-gray-500" /></button>
+                <button onClick={() => setShowCoinShop(false)}><X size={22} className="text-gray-400 hover:text-gray-600 transition" /></button>
               </div>
 
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Use coins to send gifts on live streams and tip creators
+                Use coins to send interactive live gifts or tip creators directly.
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -443,24 +763,24 @@ export default function Wallet() {
                     disabled={processing}
                     className={`relative p-4 rounded-2xl border-2 text-left transition hover:shadow-md ${
                       pkg.popular
-                        ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
-                        : "border-gray-200 dark:border-[#38444d] bg-white dark:bg-[#1e2732]"
+                        ? "border-yellow-400 bg-yellow-50/30 dark:bg-yellow-950/10"
+                        : "border-gray-100 dark:border-[#38444d] bg-white dark:bg-[#1e2732]"
                     }`}
                   >
                     {pkg.popular && (
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full tracking-wide uppercase">
                         POPULAR
                       </div>
                     )}
-                    <div className="flex items-center gap-1 mb-1">
+                    <div className="flex items-center gap-1.5 mb-1">
                       <span className="text-xl">🪙</span>
                       <span className="font-extrabold text-gray-900 dark:text-white">{pkg.coins.toLocaleString()}</span>
                     </div>
                     {pkg.bonus > 0 && (
-                      <p className="text-xs text-green-600 font-medium">+{pkg.bonus} bonus coins</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-semibold">+{pkg.bonus} bonus coins</p>
                     )}
                     <p className="text-sm font-bold text-blue-600 mt-1">₦{pkg.price.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400">{pkg.label}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{pkg.label}</p>
                   </button>
                 ))}
               </div>
