@@ -10,6 +10,7 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useSocket } from "../context/SocketContext"; // Added useSocket context integration
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
 import ReactionPicker from "../components/feed/ReactionPicker";
@@ -17,6 +18,7 @@ import QuotePost from "../components/feed/QuotePost";
 import PollCard from "../components/feed/PollCard";
 import CreatePoll from "../components/feed/CreatePoll";
 import AIComposer from "../components/feed/AIComposer"; 
+import ReportModal from "../components/moderation/ReportModal";
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -164,6 +166,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showQuote, setShowQuote] = useState(false);
   const [showQuoteInput, setShowQuoteInput] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
@@ -293,7 +296,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
                     )}
                     {!isOwn && (
                       <button
-                        onClick={() => { toast({ message: "Post reported", type: "info" }); setShowMenu(false); }}
+                        onClick={() => { setShowReport(true); setShowMenu(false); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
                       >
                         <Flag size={14} /> Report post
@@ -481,6 +484,13 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {showReport && (
+        <ReportModal
+          post={localPost}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </motion.div>
   );
 }
@@ -490,6 +500,7 @@ const tabs = ["For You", "Following", "News", "Trending"];
 export default function Home() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { pushEnabled, requestPush } = useSocket(); // Extracted state hooks here
   const { uploadImage, uploadVideo, uploading: uploadingImage, progress: uploadProgress } = useUpload();
 
   // ==========================================
@@ -678,6 +689,21 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        {/* Global Push Notification Banner Segment */}
+        {!pushEnabled && (
+          <div className="bg-blue-50/60 dark:bg-blue-950/20 border-t border-gray-100 dark:border-[#38444d] px-4 py-2.5 flex items-center justify-between gap-4 transition-all">
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-medium leading-tight">
+              Get real-time updates when someone replies, reacts, or reposts your content.
+            </p>
+            <button
+              onClick={requestPush}
+              className="flex-shrink-0 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-full shadow-sm transition active:scale-95"
+            >
+              🔔 Enable Push
+            </button>
+          </div>
+        )}
       </div>
 
       <StoriesBar />
@@ -779,7 +805,6 @@ export default function Home() {
                       <BarChart2 size={18} />
                     </button>
 
-                    {/* Integrated AI Assistant Toggle Plugin */}
                     <div className="relative">
                       <button
                         onClick={() => setShowAI(!showAI)}
