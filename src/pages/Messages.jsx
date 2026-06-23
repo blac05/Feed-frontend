@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { io } from "socket.io-client"; // ✅ Safely imported at the top-level
 import {
   Send, Search, ArrowLeft, CheckCheck, Check,
   Image as ImageIcon, X, Reply, Trash2,
-  Smile, MoreVertical
+  Smile
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -13,33 +14,35 @@ import useUpload from "../hooks/useUpload";
 
 const REACTIONS = ["❤️", "😂", "😮", "👍", "🔥", "😢"];
 
+// ==========================================
+// SUB-COMPONENT: INDIVIDUAL CHAT BUBBLE
+// ==========================================
 function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, currentUserId }) {
-  const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const actionRef = useRef();
 
+  // Context-aware interaction dismissal hook (detects out-of-bounds container clicks)
   useEffect(() => {
-    const handler = (e) => {
+    const clickOutsideHandler = (e) => {
       if (actionRef.current && !actionRef.current.contains(e.target)) {
-        setShowActions(false);
         setShowReactions(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", clickOutsideHandler);
+    return () => document.removeEventListener("mousedown", clickOutsideHandler);
   }, []);
 
   if (msg.deleted) {
     return (
       <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
-        <p className="text-xs text-gray-400 italic px-4 py-2 bg-gray-100 dark:bg-[#1e2732] rounded-2xl">
+        <p className="text-xs text-gray-400 italic px-4 py-2 bg-gray-100 dark:bg-[#1e2732] rounded-2xl Layer-glass`}>
           🚫 Message deleted
         </p>
       </div>
     );
   }
 
-  const myReaction = msg.reactions?.find(r => r.user === currentUserId || r.userId === currentUserId);
+  const myReaction = msg.reactions?.find(r => (r.user === currentUserId || r.userId === currentUserId));
 
   return (
     <div
@@ -55,7 +58,7 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
       )}
 
       <div className={`relative max-w-xs lg:max-w-sm ${isMe ? "items-end" : "items-start"} flex flex-col`}>
-        {/* Reply preview */}
+        {/* Reply Message Preview Banner */}
         {msg.replyTo && (
           <div className={`text-xs px-3 py-1.5 rounded-xl mb-1 border-l-2 border-blue-400 bg-gray-100 dark:bg-[#253341] ${isMe ? "self-end" : "self-start"}`}>
             <p className="font-semibold text-blue-500 text-[10px]">{msg.replyTo?.sender?.name || msg.replyTo?.sender?.username || "Reply"}</p>
@@ -63,7 +66,7 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
           </div>
         )}
 
-        {/* Main bubble */}
+        {/* Text/Media Container Body */}
         <div
           className={`px-4 py-2.5 rounded-2xl text-sm ${
             isMe
@@ -76,14 +79,14 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
               src={msg.image}
               className="rounded-xl max-w-full mb-1 cursor-pointer hover:opacity-90 transition"
               style={{ maxHeight: "200px", objectFit: "cover" }}
-              alt="image"
+              alt="shared asset file"
               onClick={() => window.open(msg.image, "_blank")}
             />
           )}
           {msg.text && <p className="break-words leading-relaxed">{msg.text}</p>}
         </div>
 
-        {/* Reactions display */}
+        {/* Reactive Emoji Aggregate Display Overlay */}
         {msg.reactions?.length > 0 && (
           <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
             {Object.entries(
@@ -107,7 +110,7 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
           </div>
         )}
 
-        {/* Timestamp + read receipt */}
+        {/* Metadata Delivery States */}
         <div className={`flex items-center gap-1 mt-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
           <p className="text-[10px] text-gray-400">
             {new Date(msg.time || msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
@@ -120,11 +123,11 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Popover Menu Hover Overlay Interceptors */}
       <div className={`flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition mb-2 ${isMe ? "order-first" : ""}`}>
         <div className="relative">
           <button
-            onClick={() => { setShowReactions(r => !r); setShowActions(false); }}
+            onClick={() => setShowReactions(r => !r)}
             className="w-6 h-6 bg-gray-100 dark:bg-[#1e2732] rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-[#253341] transition"
           >
             <Smile size={12} />
@@ -141,7 +144,10 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
                 {REACTIONS.map(emoji => (
                   <button
                     key={emoji}
-                    onClick={() => { onReact(msg.id || msg._id, myReaction?.emoji === emoji ? null : emoji); setShowReactions(false); }}
+                    onClick={() => {
+                      onReact(msg.id || msg._id, myReaction?.emoji === emoji ? null : emoji);
+                      setShowReactions(false);
+                    }}
                     className="text-lg hover:scale-125 transition"
                   >
                     {emoji}
@@ -172,10 +178,13 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
   );
 }
 
+// ==========================================
+// MAIN CONTAINER COMPONENT: DM WORKSPACE
+// ==========================================
 export default function Messages() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { isOnline, socket: globalSocket } = useSocket();
+  const { isOnline } = useSocket();
   const { uploadImage, uploading: uploadingImg, progress } = useUpload();
 
   const [contacts, setContacts] = useState([]);
@@ -199,18 +208,26 @@ export default function Messages() {
   const typingTimerRef = useRef(null);
   const imageInputRef = useRef();
 
-  // Own socket for DMs (separate from global)
+  // --- EFFECT 1: INITIALIZE DEDICATED REALTIME DM SOCKET LAYER ---
   useEffect(() => {
     if (!user) return;
-    const { io } = require("socket.io-client");
-    socketRef.current = io(
-      import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://feed-er99.onrender.com",
-      { auth: { token: localStorage.getItem("token") }, transports: ["websocket", "polling"] }
-    );
-    return () => socketRef.current?.disconnect();
+
+    const targetSocketUrl = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://feed-er99.onrender.com";
+
+    // Replaced standard inline client generation mechanics with module imports
+    socketRef.current = io(targetSocketUrl, {
+      auth: { token: localStorage.getItem("token") },
+      transports: ["websocket", "polling"]
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, [user]);
 
-  // Socket event listeners
+  // --- EFFECT 2: REGISTER INCOMING STREAM SOCKET EVENT DISPATCHERS ---
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -239,7 +256,7 @@ export default function Messages() {
     });
 
     socket.on("messages-read", ({ by }) => {
-      if (activeContact?._id === by || activeContact?._id?.toString() === by?.toString()) {
+      if (activeContact?._id?.toString() === by?.toString()) {
         setMessages(prev => prev.map(m => m.senderId === user._id ? { ...m, read: true } : m));
       }
     });
@@ -252,19 +269,18 @@ export default function Messages() {
       socket.off("message-deleted");
       socket.off("messages-read");
     };
-  }, [socketRef.current, activeContact?._id]);
+  }, [activeContact?._id, user?._id]);
 
-  // Scroll to bottom
+  // --- EFFECT 3: AUTOMATED SCROLL PINNING CONTROL ---
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Join DM room + load persisted messages
+  // --- EFFECT 4: MOUNT ACTIVE ROOM SPACE AND PULL HISTORICAL RECORDS ---
   useEffect(() => {
     if (!activeContact || !user) return;
     socketRef.current?.emit("join-dm", { userId: user._id, otherUserId: activeContact._id });
 
-    // Load from DB
     setLoadingMessages(true);
     api.get(`/messages/${activeContact._id}`)
       .then(res => {
@@ -287,9 +303,9 @@ export default function Messages() {
       })
       .catch(() => setMessages([]))
       .finally(() => setLoadingMessages(false));
-  }, [activeContact?._id]);
+  }, [activeContact?._id, user]);
 
-  // Load contacts
+  // --- EFFECT 5: COMPILE ACCOUNTS USER INTERACTED WITH FOR CHAT ROSTER ---
   useEffect(() => {
     if (!user) return;
     api.get("/users/me").then(res => {
@@ -303,29 +319,34 @@ export default function Messages() {
     }).catch(() => {});
   }, [user]);
 
-  // User search
+  // --- EFFECT 6: DEBOUNCED GLOBAL USER SEARCH REGEX HANDLER ---
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
-    const t = setTimeout(async () => {
+    const delayTimer = setTimeout(async () => {
       try {
         const res = await api.get(`/users/search?q=${searchQuery}`);
         setSearchResults(res.data.users || []);
       } catch (e) {}
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(delayTimer);
   }, [searchQuery]);
 
-  // Message search
+  // --- EFFECT 7: DEBOUNCED LOCAL ROOM TEXT CONTENT SEARCH HANDLER ---
   useEffect(() => {
     if (!msgSearch.trim() || !activeContact) { setMsgSearchResults([]); return; }
-    const t = setTimeout(async () => {
+    const delayTimer = setTimeout(async () => {
       try {
         const res = await api.get(`/messages/search?userId=${activeContact._id}&q=${encodeURIComponent(msgSearch)}`);
         setMsgSearchResults(res.data.messages || []);
       } catch (e) {}
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(delayTimer);
   }, [msgSearch, activeContact?._id]);
+
+  // --- EFFECT 8: MEMORY TIMEOUT GARBAGE LIFECYCLE CLEANER ---
+  useEffect(() => {
+    return () => clearTimeout(typingTimerRef.current);
+  }, []);
 
   const selectContact = (contact) => {
     setActiveContact(contact);
@@ -370,14 +391,12 @@ export default function Messages() {
       reactions: [],
     };
 
-    // Optimistic add
     setMessages(prev => [...prev, msg]);
     setText("");
     setImageFile(null);
     setImagePreview(null);
     setReplyTo(null);
 
-    // Emit socket
     socketRef.current?.emit("send-dm", {
       tempId,
       senderId: user._id,
@@ -389,7 +408,6 @@ export default function Messages() {
       replyTo: replyTo?._id || replyTo?.id || null,
     });
 
-    // Persist to DB
     api.post("/messages", {
       receiverId: activeContact._id,
       text: msg.text,
@@ -401,6 +419,7 @@ export default function Messages() {
   const handleTyping = (e) => {
     setText(e.target.value);
     socketRef.current?.emit("typing", { senderId: user._id, receiverId: activeContact?._id });
+    
     clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       socketRef.current?.emit("stop-typing", { senderId: user._id, receiverId: activeContact?._id });
@@ -416,7 +435,6 @@ export default function Messages() {
       if (emoji) reactions.push({ user: user._id, emoji });
       return { ...m, reactions };
     }));
-    // Persist
     api.post(`/messages/${messageId}/react`, { emoji }).catch(() => {});
   };
 
@@ -424,9 +442,7 @@ export default function Messages() {
     const convId = [user._id, activeContact._id].sort().join("-");
     socketRef.current?.emit("dm-delete", { messageId, conversationId: convId });
     setMessages(prev => prev.map(m =>
-      (m.id === messageId || m._id === messageId)
-        ? { ...m, deleted: true, text: "", image: "" }
-        : m
+      (m.id === messageId || m._id === messageId) ? { ...m, deleted: true, text: "", image: "" } : m
     ));
     api.delete(`/messages/${messageId}`).catch(() => {});
   };
@@ -443,7 +459,7 @@ export default function Messages() {
 
   return (
     <div className="h-screen flex dark:bg-[#15202b] overflow-hidden">
-      {/* Sidebar */}
+      {/* SIDEBAR NAVIGATION BLOCK */}
       <div className={`w-full md:w-80 border-r border-gray-100 dark:border-[#38444d] flex flex-col bg-white dark:bg-[#15202b] ${showMobileChat ? "hidden md:flex" : "flex"}`}>
         <div className="px-4 py-4 border-b border-gray-100 dark:border-[#38444d]">
           <h2 className="font-bold text-xl text-gray-900 dark:text-white mb-3">Messages</h2>
@@ -458,7 +474,7 @@ export default function Messages() {
           </div>
         </div>
 
-        {/* Search results */}
+        {/* Global Directory Search Pipeline Output */}
         {searchResults.length > 0 && (
           <div className="border-b border-gray-100 dark:border-[#38444d] max-h-52 overflow-y-auto">
             {searchResults.map(u => (
@@ -481,7 +497,7 @@ export default function Messages() {
           </div>
         )}
 
-        {/* Contacts */}
+        {/* Persisted Dynamic Conversations Stack */}
         <div className="flex-1 overflow-y-auto">
           {contacts.length === 0 && !searchQuery && (
             <div className="text-center py-12 text-gray-400 px-4">
@@ -511,11 +527,11 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* CORE ACTIVE CHAT FEED PLATFORM LAYER */}
       <div className={`flex-1 ${showMobileChat ? "flex" : "hidden md:flex"} flex-col dark:bg-[#15202b]`}>
         {activeContact ? (
           <>
-            {/* Header */}
+            {/* Header Content Wrapper */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d] flex items-center gap-3 bg-white dark:bg-[#15202b]">
               <button
                 onClick={() => setShowMobileChat(false)}
@@ -544,7 +560,6 @@ export default function Messages() {
                 )}
               </div>
 
-              {/* Search messages toggle */}
               <button
                 onClick={() => setShowMsgSearch(s => !s)}
                 className={`p-2 rounded-full transition ${showMsgSearch ? "bg-blue-50 dark:bg-blue-900/20 text-blue-500" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1e2732]"}`}
@@ -553,7 +568,7 @@ export default function Messages() {
               </button>
             </div>
 
-            {/* Message search */}
+            {/* Local Conversation Overlay Match Input */}
             <AnimatePresence>
               {showMsgSearch && (
                 <motion.div
@@ -586,7 +601,7 @@ export default function Messages() {
               )}
             </AnimatePresence>
 
-            {/* Messages */}
+            {/* Chat Timeline Scroller Canvas */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-white dark:bg-[#15202b]">
               {loadingMessages ? (
                 <div className="flex justify-center py-8">
@@ -616,7 +631,7 @@ export default function Messages() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Reply preview */}
+            {/* Context-Reply Stencil Preview Strip */}
             <AnimatePresence>
               {replyTo && (
                 <motion.div
@@ -640,7 +655,7 @@ export default function Messages() {
               )}
             </AnimatePresence>
 
-            {/* Image preview */}
+            {/* Outbound Local Media Content Image Upload Preview */}
             <AnimatePresence>
               {imagePreview && (
                 <motion.div
@@ -650,7 +665,7 @@ export default function Messages() {
                   className="px-4 py-2 border-t border-gray-100 dark:border-[#38444d] bg-white dark:bg-[#15202b]"
                 >
                   <div className="relative inline-block">
-                    <img src={imagePreview} className="h-20 rounded-xl object-cover" alt="preview" />
+                    <img src={imagePreview} className="h-20 rounded-xl object-cover" alt="upload compilation visual target" />
                     <button
                       onClick={() => { setImageFile(null); setImagePreview(null); }}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
@@ -667,7 +682,7 @@ export default function Messages() {
               )}
             </AnimatePresence>
 
-            {/* Input */}
+            {/* Message Operational Action Form Input */}
             <div className="px-4 py-3 border-t border-gray-100 dark:border-[#38444d] flex gap-3 items-end bg-white dark:bg-[#15202b]">
               <button
                 onClick={() => imageInputRef.current?.click()}
@@ -695,6 +710,7 @@ export default function Messages() {
             </div>
           </>
         ) : (
+          /* Empty Room Layout Placeholder Status Display */
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
             <div className="text-6xl mb-4">💬</div>
             <p className="font-bold text-gray-600 dark:text-gray-400 text-lg">Your Messages</p>
@@ -705,3 +721,4 @@ export default function Messages() {
     </div>
   );
 }
+
