@@ -5,7 +5,7 @@ import {
   Image, Video as VideoIcon, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
   X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio,
-  Sparkles 
+  Sparkles, Flame
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -495,9 +495,10 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   );
 }
 
-const tabs = ["For You", "Following", "News", "Trending"];
+const tabs = ["For You", "Following", "Headlines", "Trending"];
 
 export default function Home() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const { pushEnabled, requestPush } = useSocket(); // Extracted state hooks here
@@ -539,6 +540,19 @@ export default function Home() {
     else setLoadingMore(true);
 
     try {
+      if (activeTab === "Headlines") {
+        // Show hot headlines in home feed as cards
+        const res = await api.get(`/posts/headlines/hot?page=${pageNum}&limit=10`);
+        const newPosts = res.data.posts || [];
+        if (reset || pageNum === 1) setPosts(newPosts);
+        else setPosts(prev => {
+          const ids = new Set(prev.map(p => p._id));
+          return [...prev, ...newPosts.filter(p => !ids.has(p._id))];
+        });
+        setHasMore(res.data.hasMore ?? false);
+        return;
+      }
+
       let endpoint = `/posts?page=${pageNum}&limit=15`;
       if (activeTab === "Following") endpoint = `/posts/following?page=${pageNum}&limit=15`;
       if (activeTab === "News") endpoint = `/posts/news?page=${pageNum}&limit=15`;
@@ -701,6 +715,21 @@ export default function Home() {
               className="flex-shrink-0 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-full shadow-sm transition active:scale-95"
             >
               🔔 Enable Push
+            </button>
+          </div>
+        )}
+
+        {activeTab === "Headlines" && (
+          <div className="bg-orange-50 dark:bg-orange-900/10 border-b border-orange-100 dark:border-orange-900/30 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-orange-500" />
+              <span className="text-xs font-bold text-orange-600 dark:text-orange-400">Showing Hot Headlines</span>
+            </div>
+            <button
+              onClick={() => navigate("/headlines")}
+              className="text-xs text-orange-500 font-bold hover:underline"
+            >
+              Full feed →
             </button>
           </div>
         )}
