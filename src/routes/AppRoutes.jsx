@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { Search, Home as HomeIcon, Wallet as WalletIcon, ShoppingBag, Radio, BarChart2 } from "lucide-react";
+import { Search, Home as HomeIcon, Wallet as WalletIcon, ShoppingBag, Radio, BarChart2, Newspaper as NewspaperIcon } from "lucide-react";
 
 // Auth
 import Landing from "../pages/Landing";
@@ -12,6 +12,7 @@ import VerifyEmail from "../pages/VerifyEmail";
 
 // Core pages
 import Home from "../pages/Home";
+import Headlines from "../pages/Headlines";
 import Explore from "../pages/Explore";
 import Profile from "../pages/Profile";
 import PostDetail from "../pages/PostDetail";
@@ -44,7 +45,7 @@ import PodcastPlayer from "../pages/PodcastPlayer";
 import AudioSpaces from "../pages/AudioSpaces";
 import SpaceRoom from "../pages/SpaceRoom";
 import EventsHub from "../pages/EventsHub";
-import TicketCheckout from "../pages/TicketCheckout";
+import TicketCheckout = "../pages/TicketCheckout";
 import Checkout from "../pages/Checkout";
 import CreatorStore from "../pages/CreatorStore";
 import Sponsorships from "../pages/Sponsorships";
@@ -74,6 +75,7 @@ function CommandPalette() {
 
   const links = [
     { name: "Home Feed", url: "/home", icon: <HomeIcon size={15} /> },
+    { name: "Headlines", url: "/headlines", icon: <NewspaperIcon size={15} /> },
     { name: "Creator Dashboard", url: "/creator-dashboard", icon: <BarChart2 size={15} /> },
     { name: "Wallet & Balance", url: "/wallet", icon: <WalletIcon size={15} /> },
     { name: "Marketplace", url: "/marketplace", icon: <ShoppingBag size={15} /> },
@@ -144,6 +146,7 @@ export default function AppRoutes() {
 
         {/* Core */}
         <Route path="/home" element={<Home />} />
+        <Route path="/headlines" element={<Headlines />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/for-you" element={<ForYou />} />
         <Route path="/profile/:id" element={<Profile />} />
