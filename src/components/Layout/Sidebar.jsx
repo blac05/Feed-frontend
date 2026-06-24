@@ -2,7 +2,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   Home, Search, Bell, Mail, Bookmark, User,
   Settings, Radio, ShoppingBag, Wallet, Users,
-  LogOut, Moon, Sun, BarChart2, Calendar
+  LogOut, Moon, Sun, BarChart2, Calendar, Newspaper
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../context/AuthContext";
@@ -29,6 +29,7 @@ export default function Sidebar() {
 
   const navLinks = [
     { to: "/home", label: "Home", icon: Home },
+    { to: "/headlines", label: "Headlines", icon: Newspaper },
     { to: "/explore", label: "Explore", icon: Search },
     { to: "/notifications", label: "Notifications", icon: Bell, badge: totalUnread > 0 ? totalUnread : null },
     { to: "/messages", label: "Messages", icon: Mail },
