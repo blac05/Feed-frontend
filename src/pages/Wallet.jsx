@@ -1,6 +1,27 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Bookmark, MessageCircle, ArrowDownLeft } from "lucide-react";
+import {
+  Wallet as WalletIcon, // Renamed to prevent clashing with default Wallet() component name
+  ArrowUpRight,
+  ArrowDownLeft,
+  Gift,
+  CreditCard,
+  History, 
+  TrendingUp,
+  Landmark,
+  Smartphone,
+  RefreshCw,
+  MessageCircle,
+  Zap,
+  Receipt,
+  Coins,
+  Shield,
+  X,
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -25,180 +46,35 @@ const COIN_PACKAGES = [
 ];
 
 const paymentMethods = [
-  {
-    id: "card",
-    name: "Credit / Debit Card",
-    icon: CreditCard,
-    subtitle: "Visa, Mastercard, Amex, Discover"
-  },
-  {
-    id: "bank",
-    name: "Bank Transfer",
-    icon: Landmark,
-    subtitle: "Direct bank account transfer"
-  },
-  {
-    id: "ussd",
-    name: "USSD Payment",
-    icon: Smartphone,
-    subtitle: "Quick bank shortcode payment"
-  },
-  {
-    id: "paypal",
-    name: "PayPal",
-    icon: Wallet,
-    subtitle: "Global online wallet"
-  },
-  {
-    id: "applepay",
-    name: "Apple Pay",
-    icon: Smartphone,
-    subtitle: "Fast checkout on Apple devices"
-  },
-  {
-    id: "googlepay",
-    name: "Google Pay",
-    icon: Smartphone,
-    subtitle: "Secure Android payments"
-  },
-  {
-    id: "samsungpay",
-    name: "Samsung Pay",
-    icon: Smartphone,
-    subtitle: "Pay with Samsung Wallet"
-  },
-  {
-    id: "paystack",
-    name: "Paystack",
-    icon: RefreshCw,
-    subtitle: "Card, Bank & Mobile Money"
-  },
-  {
-    id: "flutterwave",
-    name: "Flutterwave",
-    icon: RefreshCw,
-    subtitle: "African payments gateway"
-  },
-  {
-    id: "momo",
-    name: "Mobile Money",
-    icon: Smartphone,
-    subtitle: "MTN MoMo, Airtel Money, Telecel Cash"
-  },
-  {
-    id: "mpesa",
-    name: "M-Pesa",
-    icon: Smartphone,
-    subtitle: "East Africa mobile payments"
-  },
-  {
-    id: "alipay",
-    name: "Alipay",
-    icon: Wallet,
-    subtitle: "China's leading digital wallet"
-  },
-  {
-    id: "wechatpay",
-    name: "WeChat Pay",
-    icon: MessageCircle,
-    subtitle: "Chinese social wallet payments"
-  },
-  {
-    id: "upi",
-    name: "UPI",
-    icon: Landmark,
-    subtitle: "India instant bank payments"
-  },
-  {
-    id: "paytm",
-    name: "Paytm",
-    icon: Wallet,
-    subtitle: "India wallet & UPI payments"
-  },
-  {
-    id: "pix",
-    name: "PIX",
-    icon: Zap,
-    subtitle: "Brazil instant payments"
-  },
-  {
-    id: "mercadopago",
-    name: "Mercado Pago",
-    icon: Wallet,
-    subtitle: "Latin America digital wallet"
-  },
-  {
-    id: "klarna",
-    name: "Klarna",
-    icon: Receipt,
-    subtitle: "Buy now, pay later"
-  },
-  {
-    id: "afterpay",
-    name: "Afterpay",
-    icon: Receipt,
-    subtitle: "Australia & global BNPL"
-  },
-  {
-    id: "ideal",
-    name: "iDEAL",
-    icon: Landmark,
-    subtitle: "Netherlands bank payments"
-  },
-  {
-    id: "sofort",
-    name: "Sofort",
-    icon: Landmark,
-    subtitle: "European instant bank transfer"
-  },
-  {
-    id: "sepa",
-    name: "SEPA Transfer",
-    icon: Landmark,
-    subtitle: "European bank payments"
-  },
-  {
-    id: "crypto",
-    name: "Cryptocurrency",
-    icon: Coins,
-    subtitle: "BTC, ETH, USDT and more"
-  },
-  {
-    id: "giftcard",
-    name: "Gift Card",
-    icon: Gift,
-    subtitle: "Redeem prepaid gift cards"
-  },
-  {
-    id: "coin",
-    name: "Buy Coins",
-    icon: Coins,
-    subtitle: "Purchase coins for gifts & tips"
-  },
-  {
-    id: "cashapp",
-    name: "Cash App Pay",
-    icon: Wallet,
-    subtitle: "Popular in the USA"
-  },
-  {
-    id: "venmo",
-    name: "Venmo",
-    icon: Wallet,
-    subtitle: "Peer-to-peer payments"
-  },
-  {
-    id: "zelle",
-    name: "Zelle",
-    icon: Landmark,
-    subtitle: "US instant bank transfer"
-  },
-  {
-    id: "test",
-    name: "Test Top-Up (Dev)",
-    icon: Shield,
-    subtitle: "Simulate payment in development"
-  }
+  { id: "card", name: "Credit / Debit Card", icon: CreditCard, subtitle: "Visa, Mastercard, Amex, Discover" },
+  { id: "bank", name: "Bank Transfer", icon: Landmark, subtitle: "Direct bank account transfer" },
+  { id: "ussd", name: "USSD Payment", icon: Smartphone, subtitle: "Quick bank shortcode payment" },
+  { id: "paypal", name: "PayPal", icon: WalletIcon, subtitle: "Global online wallet" },
+  { id: "applepay", name: "Apple Pay", icon: Smartphone, subtitle: "Fast checkout on Apple devices" },
+  { id: "googlepay", name: "Google Pay", icon: Smartphone, subtitle: "Secure Android payments" },
+  { id: "samsungpay", name: "Samsung Pay", icon: Smartphone, subtitle: "Pay with Samsung Wallet" },
+  { id: "paystack", name: "Paystack", icon: RefreshCw, subtitle: "Card, Bank & Mobile Money" },
+  { id: "flutterwave", name: "Flutterwave", icon: RefreshCw, subtitle: "African payments gateway" },
+  { id: "momo", name: "Mobile Money", icon: Smartphone, subtitle: "MTN MoMo, Airtel Money, Telecel Cash" },
+  { id: "mpesa", name: "M-Pesa", icon: Smartphone, subtitle: "East Africa mobile payments" },
+  { id: "alipay", name: "Alipay", icon: WalletIcon, subtitle: "China's leading digital wallet" },
+  { id: "wechatpay", name: "WeChat Pay", icon: MessageCircle, subtitle: "Chinese social wallet payments" },
+  { id: "upi", name: "UPI", icon: Landmark, subtitle: "India instant bank payments" },
+  { id: "paytm", name: "Paytm", icon: WalletIcon, subtitle: "India wallet & UPI payments" },
+  { id: "pix", name: "PIX", icon: Zap, subtitle: "Brazil instant payments" },
+  { id: "mercadopago", name: "Mercado Pago", icon: WalletIcon, subtitle: "Latin America digital wallet" },
+  { id: "klarna", name: "Klarna", icon: Receipt, subtitle: "Buy now, pay later" },
+  { id: "afterpay", name: "Afterpay", icon: Receipt, subtitle: "Australia & global BNPL" },
+  { id: "ideal", name: "iDEAL", icon: Landmark, subtitle: "Netherlands bank payments" },
+  { id: "sofort", name: "Sofort", icon: Landmark, subtitle: "European instant bank transfer" },
+  { id: "sepa", name: "SEPA Transfer", icon: Landmark, subtitle: "European bank payments" },
+  { id: "crypto", name: "Cryptocurrency", icon: Coins, subtitle: "BTC, ETH, USDT and more" },
+  { id: "giftcard", name: "Gift Card", icon: Gift, subtitle: "Redeem prepaid gift cards" },
+  { id: "coin", name: "Buy Coins", icon: Coins, subtitle: "Purchase coins for gifts & tips" },
+  { id: "cashapp", name: "Cash App Pay", icon: WalletIcon, subtitle: "Popular in the USA" },
+  { id: "venmo", name: "Venmo", icon: WalletIcon, subtitle: "Peer-to-peer payments" },
+  { id: "zelle", name: "Zelle", icon: Landmark, subtitle: "US instant bank transfer" },
+  { id: "test", name: "Test Top-Up (Dev)", icon: Shield, subtitle: "Simulate payment in development" }
 ];
 
 export default function Wallet() {
@@ -231,7 +107,6 @@ export default function Wallet() {
     }
   };
 
-  // Ultra-Modern Native / Inline Gateway Checkout Handler
   const handleModernCheckout = async () => {
     if (!topUpAmount || topUpAmount < 100) {
       return toast({ message: "Minimum transaction amount is ₦100", type: "error" });
@@ -245,17 +120,14 @@ export default function Wallet() {
         paymentChannel: selectedMethod
       });
 
-      // Instead of standard window.open redirect, we use the ultra-modern inline system
       if (res.data.accessCode) {
         setCheckoutState("verifying");
         
-        // Dynamically load Paystack Inline SDK if not present and open popup frame natively
         const PaystackPop = (await import("@paystack/inline-js")).default;
         const popup = new PaystackPop();
         
         popup.resumeTransaction(res.data.accessCode, {
           onSuccess: async (response) => {
-            // Verify payment directly on completion hook
             await verifyTransactionOnBackend(response.reference);
           },
           onCancel: () => {
@@ -265,7 +137,6 @@ export default function Wallet() {
           }
         });
       } else {
-        // Safe developmental fallback
         await handleTestTopUp(topUpAmount);
       }
     } catch (e) {
@@ -599,7 +470,7 @@ export default function Wallet() {
                           type="number"
                           min="100"
                           value={topUpAmount || ""}
-                          placeholder="Enter custom custom amount"
+                          placeholder="Enter custom amount"
                           className="w-full py-3 pl-8 pr-4 rounded-xl text-sm font-semibold border-2 border-gray-100 dark:border-[#38444d] bg-transparent text-gray-800 dark:text-white focus:outline-none focus:border-blue-500 transition"
                           onChange={e => setTopUpAmount(Number(e.target.value))}
                         />
@@ -611,7 +482,7 @@ export default function Wallet() {
                   <div>
                     <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide block mb-2">Default Payment Method</label>
                     <div className="space-y-2">
-                      {PAYMENT_METHODS.map(method => {
+                      {paymentMethods.map(method => {
                         const MethodIcon = method.icon;
                         return (
                           <div
@@ -663,7 +534,7 @@ export default function Wallet() {
                       disabled={processing}
                       className="w-full text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-center py-1 transition underline decoration-dotted"
                     >
-                      Bypass secure flow via Sandbox Sandbox Mode
+                      Bypass secure flow via Sandbox Mode
                     </button>
                   </div>
                 </div>
@@ -753,37 +624,30 @@ export default function Wallet() {
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {COIN_PACKAGES.map((pkg, i) => (
-                  <button
+                  <div
                     key={i}
-                    onClick={() => handleTestTopUp(pkg.price)}
-                    disabled={processing}
-                    className={`relative p-4 rounded-2xl border-2 text-left transition hover:shadow-md ${
-                      pkg.popular
-                        ? "border-yellow-400 bg-yellow-50/30 dark:bg-yellow-950/10"
-                        : "border-gray-100 dark:border-[#38444d] bg-white dark:bg-[#1e2732]"
+                    className={`p-4 rounded-2xl border-2 relative cursor-pointer hover:border-orange-400 transition ${
+                      pkg.popular ? "border-orange-500 bg-orange-50/10" : "border-gray-100 dark:border-[#38444d]"
                     }`}
                   >
                     {pkg.popular && (
-                      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full tracking-wide uppercase">
-                        POPULAR
-                      </div>
+                      <span className="absolute -top-2.5 left-4 bg-orange-500 text-white text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                        {pkg.label}
+                      </span>
                     )}
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xl">🪙</span>
-                      <span className="font-extrabold text-gray-900 dark:text-white">{pkg.coins.toLocaleString()}</span>
+                    <div className="flex items-center gap-1.5 font-black text-xl text-gray-900 dark:text-white">
+                      <Coins size={18} className="text-yellow-500" />
+                      {pkg.coins}
                     </div>
                     {pkg.bonus > 0 && (
-                      <p className="text-xs text-green-600 dark:text-green-400 font-semibold">+{pkg.bonus} bonus coins</p>
+                      <p className="text-xs text-green-500 font-bold mt-0.5">+{pkg.bonus} Bonus Coins</p>
                     )}
-                    <p className="text-sm font-bold text-blue-600 mt-1">₦{pkg.price.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{pkg.label}</p>
-                  </button>
+                    <button className="w-full mt-3 bg-gray-100 dark:bg-[#253341] hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 text-gray-900 dark:text-white py-2 rounded-xl text-xs font-bold transition">
+                      ₦{pkg.price}
+                    </button>
+                  </div>
                 ))}
               </div>
-
-              <p className="text-xs text-gray-400 text-center">
-                Current balance: 🪙 {(wallet?.coins || 0).toLocaleString()} coins
-              </p>
             </motion.div>
           </motion.div>
         )}
