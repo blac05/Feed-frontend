@@ -10,7 +10,7 @@ import {
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { useSocket } from "../context/SocketContext"; // Added useSocket context integration
+import { useSocket } from "../context/SocketContext"; 
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
 import ReactionPicker from "../components/feed/ReactionPicker";
@@ -19,6 +19,7 @@ import PollCard from "../components/feed/PollCard";
 import CreatePoll from "../components/feed/CreatePoll";
 import AIComposer from "../components/feed/AIComposer"; 
 import ReportModal from "../components/moderation/ReportModal";
+import SubscribeButton from "../components/subscriptions/SubscribeButton"; // Added SubscribeButton import
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -262,6 +263,13 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-gray-400 dark:text-gray-500 text-sm">@{localPost.author?.username}</span>
               <span className="text-gray-300 dark:text-gray-600 text-sm">·</span>
               <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
+              
+              {/* Subscribe Button (integrated contextually) */}
+              {!isOwn && (
+                <div className="ml-2 scale-90 origin-left">
+                  <SubscribeButton creatorId={localPost.author?._id} />
+                </div>
+              )}
             </div>
 
             <div className="relative" ref={menuRef}>
@@ -307,6 +315,13 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               </AnimatePresence>
             </div>
           </div>
+
+          {/* Karma Metric Segment */}
+          {localPost.author?.karma > 0 && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-orange-500 font-bold">🏆 {localPost.author.karma?.toLocaleString()} karma</span>
+            </div>
+          )}
 
           <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
             {localPost.content.split(/(\s+)/).map((word, i) => {
@@ -469,7 +484,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
                     onChange={e => setComment(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && submitComment()}
                     placeholder="Write a comment..."
-                    className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                   <button
                     onClick={submitComment}
@@ -501,7 +516,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { pushEnabled, requestPush } = useSocket(); // Extracted state hooks here
+  const { pushEnabled, requestPush } = useSocket(); 
   const { uploadImage, uploadVideo, uploading: uploadingImage, progress: uploadProgress } = useUpload();
 
   // ==========================================
@@ -541,7 +556,6 @@ export default function Home() {
 
     try {
       if (activeTab === "Headlines") {
-        // Show hot headlines in home feed as cards
         const res = await api.get(`/posts/headlines/hot?page=${pageNum}&limit=10`);
         const newPosts = res.data.posts || [];
         if (reset || pageNum === 1) setPosts(newPosts);
@@ -586,7 +600,6 @@ export default function Home() {
   // ==========================================
   // EFFECT LIFECYCLES
   // ==========================================
-
   useEffect(() => {
     setPage(1);
     setHasMore(true);
