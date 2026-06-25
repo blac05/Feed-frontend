@@ -13,6 +13,7 @@
     "start": "vite"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.23.1",
     "axios": "^1.11.0",
     "chart.js": "^4.5.1",
     "framer-motion": "^12.23.12",
