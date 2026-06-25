@@ -1,6 +1,16 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { Search, Home as HomeIcon, Wallet as WalletIcon, ShoppingBag, Radio, BarChart2 } from "lucide-react";
+import { 
+  Search, 
+  Home as HomeIcon, 
+  Wallet as WalletIcon, 
+  ShoppingBag, 
+  Radio, 
+  BarChart2, 
+  Newspaper as NewspaperIcon,
+  Volume2,
+  Flame 
+} from "lucide-react";
 
 // Auth
 import Landing from "../pages/Landing";
@@ -12,6 +22,7 @@ import VerifyEmail from "../pages/VerifyEmail";
 
 // Core pages
 import Home from "../pages/Home";
+import Headlines from "../pages/Headlines";
 import Explore from "../pages/Explore";
 import Profile from "../pages/Profile";
 import PostDetail from "../pages/PostDetail";
@@ -33,7 +44,7 @@ import Wallet from "../pages/Wallet";
 import AdminDashboard from "../pages/AdminDashboard";
 import CreatorDashboard from "../pages/CreatorDashboard";
 
-// Coming soon stubs
+// Coming soon stubs / Implementations
 import ForYou from "../pages/ForYou";
 import Chat from "../pages/Chat";
 import GroupChat from "../pages/GroupChat";
@@ -42,7 +53,6 @@ import Stories from "../pages/Stories";
 import Podcasts from "../pages/Podcasts";
 import PodcastPlayer from "../pages/PodcastPlayer";
 import AudioSpaces from "../pages/AudioSpaces";
-import SpaceRoom from "../pages/SpaceRoom";
 import EventsHub from "../pages/EventsHub";
 import TicketCheckout from "../pages/TicketCheckout";
 import Checkout from "../pages/Checkout";
@@ -74,6 +84,8 @@ function CommandPalette() {
 
   const links = [
     { name: "Home Feed", url: "/home", icon: <HomeIcon size={15} /> },
+    { name: "Headlines Feed", url: "/headlines", icon: <Flame size={15} /> },
+    { name: "Audio Spaces", url: "/audio-spaces", icon: <Volume2 size={15} /> },
     { name: "Creator Dashboard", url: "/creator-dashboard", icon: <BarChart2 size={15} /> },
     { name: "Wallet & Balance", url: "/wallet", icon: <WalletIcon size={15} /> },
     { name: "Marketplace", url: "/marketplace", icon: <ShoppingBag size={15} /> },
@@ -144,6 +156,7 @@ export default function AppRoutes() {
 
         {/* Core */}
         <Route path="/home" element={<Home />} />
+        <Route path="/headlines" element={<Headlines />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/for-you" element={<ForYou />} />
         <Route path="/profile/:id" element={<Profile />} />
@@ -167,7 +180,6 @@ export default function AppRoutes() {
         <Route path="/podcasts" element={<Podcasts />} />
         <Route path="/podcast/:id" element={<PodcastPlayer />} />
         <Route path="/audio-spaces" element={<AudioSpaces />} />
-        <Route path="/space/:id" element={<SpaceRoom />} />
 
         {/* Events */}
         <Route path="/events" element={<Events />} />
@@ -204,7 +216,7 @@ export default function AppRoutes() {
         <Route path="/admin/analytics" element={<PlatformAnalytics />} />
 
         {/* 404 */}
-        <Route path="*" element={
+        <Route path="*" element = {
           <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-[#15202b] gap-4">
             <p className="text-6xl font-extrabold text-blue-600">404</p>
             <p className="text-xl font-bold text-gray-800 dark:text-white">Page not found</p>
