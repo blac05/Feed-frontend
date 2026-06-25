@@ -25,6 +25,7 @@ import Home from "../pages/Home";
 import Headlines from "../pages/Headlines";
 import Explore from "../pages/Explore";
 import Profile from "../pages/Profile";
+import PostDetail from "../pages/PostDetail"; // Added missing import statement to resolve runtime error
 import HashtagPage from "../pages/HashtagPage";
 import Bookmarks from "../pages/Bookmarks";
 import Notifications from "../pages/Notifications";
@@ -53,7 +54,7 @@ import Podcasts from "../pages/Podcasts";
 import PodcastPlayer from "../pages/PodcastPlayer";
 import AudioSpaces from "../pages/AudioSpaces";
 import EventsHub from "../pages/EventsHub";
-import TicketCheckout from "../pages/TicketCheckout"; // Fixed assignment syntax error
+import TicketCheckout from "../pages/TicketCheckout"; 
 import Checkout from "../pages/Checkout";
 import CreatorStore from "../pages/CreatorStore";
 import Sponsorships from "../pages/Sponsorships";
