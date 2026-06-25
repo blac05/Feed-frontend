@@ -35,7 +35,8 @@ function MessageBubble({ msg, isMe, contact, onReact, onReply, onDelete, current
   if (msg.deleted) {
     return (
       <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
-        <p className="text-xs text-gray-400 italic px-4 py-2 bg-gray-100 dark:bg-[#1e2732] rounded-2xl Layer-glass`}>
+        {/* Fixed the quote typo at the end of className here */}
+        <p className="text-xs text-gray-400 italic px-4 py-2 bg-gray-100 dark:bg-[#1e2732] rounded-2xl Layer-glass">
           🚫 Message deleted
         </p>
       </div>
