@@ -37,14 +37,13 @@ export default function CreatorDashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Existing States
+  // State Initialization
   const [stats, setStats] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // New States
   const [referral, setReferral] = useState(null);
   const [subscribers, setSubscribers] = useState([]);
   const [tiers, setTiers] = useState([]);
@@ -62,7 +61,6 @@ export default function CreatorDashboard() {
 
   const loadData = async () => {
     try {
-      // Fetching everything in a safe parallel block
       const [profileRes, walletRes, postsRes, referralRes, subRes, tiersRes] = await Promise.all([
         api.get(`/users/${user?._id}`),
         api.get("/wallet"),
@@ -96,7 +94,6 @@ export default function CreatorDashboard() {
       setWallet(walletRes.data.wallet);
       setRecentPosts(myPosts.slice(0, 5));
       
-      // Set new state metrics
       if (referralRes?.data) setReferral(referralRes.data);
       setSubscribers(subRes?.data?.subscribers || []);
       setTiers(tiersRes?.data?.tiers || []);
@@ -135,13 +132,6 @@ export default function CreatorDashboard() {
     }
   };
 
-  // Prepare simple chart data from recent posts for analytics tab
-  const chartData = [...recentPosts].reverse().map((p, idx) => ({
-    name: `Post ${idx + 1}`,
-    likes: p.likes?.length || 0,
-    comments: p.comments?.length || 0,
-  }));
-
   return (
     <div className="min-h-screen dark:bg-[#15202b]">
       {/* Header */}
@@ -161,7 +151,7 @@ export default function CreatorDashboard() {
           </div>
         </div>
         
-        {/* Horizontal Navigation Tabs */}
+        {/* Navigation Tabs */}
         <div className="flex gap-1 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap pb-1">
           {tabs.map(tab => (
             <button
@@ -300,199 +290,252 @@ export default function CreatorDashboard() {
             {/* ── SUBSCRIBERS TAB ────────────────────────────────── */}
             {activeTab === "subscribers" && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-extrabold text-gray-900 dark:text-white text-base">Subscription Tiers</h3>
-                    <p className="text-xs text-gray-400">Set up monetization tiers for your fans</p>
-                  </div>
-                  {tiers.length > 0 && !setupTiersMode && (
-                    <button 
-                      onClick={() => setSetupTiersMode(true)}
-                      className="text-xs font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition"
-                    >
-                      Edit Tiers
-                    </button>
-                  )}
-                </div>
-
-                {/* Tier list configuration setup view */}
                 {tiers.length === 0 || setupTiersMode ? (
-                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4 space-y-4">
-                    <p className="text-xs text-amber-500 font-semibold bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-xl">
-                      ⚠️ Configuration Mode: Setup or modify your subscription structures below.
-                    </p>
-                    {newTiers.map((tier, idx) => (
-                      <div key={idx} className="border-b border-gray-100 dark:border-[#38444d] pb-3 last:border-0 last:pb-0 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold dark:text-white">{tier.name} Tier</span>
-                          <div className="flex items-center gap-1 bg-gray-50 dark:bg-[#15202b] px-2 py-1 rounded-lg">
-                            <span className="text-xs text-gray-400">₦</span>
-                            <input 
-                              type="number" 
-                              value={tier.price}
-                              onChange={(e) => {
-                                const updated = [...newTiers];
-                                updated[idx].price = Number(e.target.value);
-                                setNewTiers(updated);
-                              }}
-                              className="w-16 text-sm font-extrabold bg-transparent text-gray-900 dark:text-white focus:outline-none"
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-5">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4">
+                      {setupTiersMode ? "Edit Subscription Tiers" : "Set Up Subscription Tiers"}
+                    </h3>
+                    <div className="space-y-4">
+                      {newTiers.map((tier, i) => (
+                        <div key={i} className="border border-gray-200 dark:border-[#38444d] rounded-2xl p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Tier {i + 1}</h4>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">Name</label>
+                              <input
+                                value={tier.name}
+                                onChange={e => {
+                                  const t = [...newTiers]; t[i].name = e.target.value; setNewTiers(t);
+                                }}
+                                className="w-full border border-gray-200 dark:border-[#38444d] bg-gray-50 dark:bg-[#15202b] text-gray-800 dark:text-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">Price (₦/month)</label>
+                              <input
+                                type="number"
+                                value={tier.price}
+                                onChange={e => {
+                                  const t = [...newTiers]; t[i].price = Number(e.target.value); setNewTiers(t);
+                                }}
+                                className="w-full border border-gray-200 dark:border-[#38444d] bg-gray-50 dark:bg-[#15202b] text-gray-800 dark:text-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">Description</label>
+                            <input
+                              value={tier.description}
+                              onChange={e => { const t = [...newTiers]; t[i].description = e.target.value; setNewTiers(t); }}
+                              className="w-full border border-gray-200 dark:border-[#38444d] bg-gray-50 dark:bg-[#15202b] text-gray-800 dark:text-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none"
                             />
                           </div>
                         </div>
-                        <input 
-                          type="text" 
-                          value={tier.description}
-                          onChange={(e) => {
-                            const updated = [...newTiers];
-                            updated[idx].description = e.target.value;
-                            setNewTiers(updated);
-                          }}
-                          className="w-full text-xs p-2 rounded-xl bg-gray-50 dark:bg-[#15202b] text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-[#38444d]"
-                          placeholder="Tier description"
-                        />
-                      </div>
-                    ))}
-                    <div className="flex gap-2">
+                      ))}
+                    </div>
+                    <div className="flex gap-3 mt-4">
                       {setupTiersMode && (
-                        <button onClick={() => setSetupTiersMode(false)} className="w-1/2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl font-bold text-sm">
+                        <button onClick={() => setSetupTiersMode(false)} className="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-[#38444d] text-gray-600 dark:text-gray-400 text-sm">
                           Cancel
                         </button>
                       )}
-                      <button onClick={setupSubscriptionTiers} className={`bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm ${setupTiersMode ? 'w-1/2' : 'w-full'}`}>
-                        Save & Activate Tiers
+                      <button onClick={setupSubscriptionTiers} className="flex-1 bg-blue-600 text-white py-2.5 rounded-2xl font-bold text-sm hover:bg-blue-700 transition">
+                        Save Tiers
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    {tiers.map((tier, index) => (
-                      <div key={index} className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{tier.name}</p>
-                          <Star size={14} className="text-amber-400 fill-amber-400" />
-                        </div>
-                        <p className="text-xl font-black text-blue-500">₦{tier.price}<span className="text-[10px] font-normal text-gray-400">/mo</span></p>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tier.description}</p>
+                  <>
+                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white flex items-center justify-between">
+                      <div>
+                        <p className="text-blue-200 text-xs">Active Subscribers</p>
+                        <p className="text-3xl font-extrabold">{subscribers.length}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Active Subscribers List Panel */}
-                <div className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-4">
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Active Subscribers ({subscribers.length})</h4>
-                  {subscribers.length === 0 ? (
-                    <div className="text-center py-6 text-gray-400 text-xs">
-                      <Users size={24} className="mx-auto mb-1.5 opacity-20" />
-                      No active subscribers yet.
+                      <button onClick={() => setSetupTiersMode(true)} className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full font-medium transition">
+                        Edit Tiers
+                      </button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {subscribers.map((sub, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs border-b border-gray-50 dark:border-[#38444d] pb-2 last:border-b-0 last:pb-0">
-                          <div className="flex items-center gap-2">
-                            <img src={sub.user?.avatar || "/default-avatar.png"} alt="" className="w-7 h-7 rounded-full object-cover bg-gray-100" />
-                            <div>
-                              <p className="font-bold text-gray-900 dark:text-white">@{sub.user?.username}</p>
-                              <p className="text-[10px] text-gray-400">Tier: {sub.tierName || "Premium"}</p>
+
+                    {/* Tier cards */}
+                    <div className="grid grid-cols-1 gap-3">
+                      {tiers.map((tier, i) => {
+                        const count = subscribers.filter(s => s.tier?.name === tier.name).length;
+                        return (
+                          <div key={i} className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-bold text-gray-900 dark:text-white">{tier.name}</h3>
+                              <span className="text-blue-600 font-bold">₦{tier.price}/mo</span>
+                            </div>
+                            <p className="text-xs text-gray-400 mb-2">{tier.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">{count} subscribers</span>
+                              <span className="text-xs text-green-600 font-bold">≈ ₦{(count * tier.price * 0.85).toLocaleString()}/mo</span>
                             </div>
                           </div>
-                          <span className="text-gray-400 font-medium">Expires {new Date(sub.expiresAt).toLocaleDateString()}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
+
+                    {/* Recent subscribers */}
+                    {subscribers.length > 0 && (
+                      <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d]">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-sm">Recent Subscribers</h3>
+                        </div>
+                        {subscribers.slice(0, 8).map((sub, i) => (
+                          <div key={sub._id || i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-[#253341] last:border-0">
+                            <img
+                              src={sub.subscriber?.avatar || `https://ui-avatars.com/api/?name=${sub.subscriber?.username}&background=2563eb&color=fff`}
+                              className="w-9 h-9 rounded-full object-cover"
+                              alt={sub.subscriber?.username}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{sub.subscriber?.name || sub.subscriber?.username}</p>
+                              <p className="text-xs text-gray-400">{sub.tier?.name} · ₦{sub.tier?.price}/mo</p>
+                            </div>
+                            <span className="text-xs text-green-600 font-bold">Active</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
             {/* ── ANALYTICS TAB ─────────────────────────────────── */}
-            {activeTab === "analytics" && (
+            {activeTab === "analytics" && stats && (
               <div className="space-y-4">
-                <div className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-4">
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-4">Post Engagement Performance</h3>
-                  {chartData.length === 0 ? (
-                    <p className="text-center text-xs text-gray-400 py-8">Publish more posts to generate interactive graphs.</p>
-                  ) : (
-                    <div className="w-full h-56 text-[11px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#38444d" opacity={0.2} />
-                          <XAxis dataKey="name" stroke="#888888" />
-                          <YAxis stroke="#888888" />
-                          <Tooltip contentStyle={{ backgroundColor: '#1e2732', border: '1px solid #38444d', borderRadius: '8px', color: '#fff' }} />
-                          <Line type="monotone" dataKey="likes" stroke="#ef4444" strokeWidth={3} activeDot={{ r: 6 }} name="Likes" />
-                          <Line type="monotone" dataKey="comments" stroke="#eab308" strokeWidth={2} name="Comments" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-4">Engagement Overview</h3>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={[
+                      { name: "Posts", value: stats.posts },
+                      { name: "Likes", value: stats.totalLikes },
+                      { name: "Comments", value: stats.totalComments },
+                      { name: "Reposts", value: stats.totalReposts },
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                      <Tooltip contentStyle={{ background: "#1e2732", border: "none", borderRadius: "12px", color: "#fff" }} />
+                      <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
 
-                <div className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-4">
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-4">Content Footprint Distribution</h3>
-                  <div className="w-full h-44 text-[11px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[{ name: 'Metrics', Likes: stats?.totalLikes || 0, Comments: stats?.totalComments || 0, Reposts: stats?.totalReposts || 0 }]}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#38444d" opacity={0.1} />
-                        <XAxis dataKey="name" stroke="#888888" />
-                        <YAxis stroke="#888888" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e2732', border: '1px solid #38444d', borderRadius: '8px' }} />
-                        <Bar dataKey="Likes" fill="#ef4444" radius={[6, 6, 0, 0]} />
-                        <Bar dataKey="Comments" fill="#eab308" radius={[6, 6, 0, 0]} />
-                        <Bar dataKey="Reposts" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4 text-center">
+                    <p className="text-3xl font-extrabold text-blue-600">{stats.engagementRate}%</p>
+                    <p className="text-xs text-gray-400 mt-1">Engagement Rate</p>
+                  </div>
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4 text-center">
+                    <p className="text-3xl font-extrabold text-purple-600">{stats.avgLikes}</p>
+                    <p className="text-xs text-gray-400 mt-1">Avg Likes / Post</p>
                   </div>
                 </div>
+
+                {/* Post performance chart */}
+                {recentPosts.length > 0 && (
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4">Post Performance</h3>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <LineChart data={recentPosts.map((p, i) => ({
+                        name: `Post ${i + 1}`,
+                        likes: p.likes?.length || 0,
+                        comments: p.comments?.length || 0,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                        <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                        <Tooltip contentStyle={{ background: "#1e2732", border: "none", borderRadius: "12px", color: "#fff" }} />
+                        <Line type="monotone" dataKey="likes" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="comments" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <div className="flex gap-4 mt-2 justify-center">
+                      <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-0.5 bg-red-500 block" /> Likes</span>
+                      <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-0.5 bg-blue-500 block" /> Comments</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* ── REFERRAL TAB ──────────────────────────────────── */}
             {activeTab === "referral" && (
               <div className="space-y-4">
-                <div className="bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl p-5 text-white relative overflow-hidden">
-                  <div className="absolute right-2 bottom-2 opacity-10"><Gift size={120} /></div>
-                  <h3 className="font-extrabold text-lg mb-1">Invite Friends, Earn Coins! 🪙</h3>
-                  <p className="text-indigo-100 text-xs leading-relaxed max-w-[85%]">
-                    Share your unique referral engine code. Whenever an onboarding user signs up with your link, both of you collect coin gifts instantly.
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-5 text-white">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Gift size={20} />
+                    <h3 className="font-bold text-lg">Referral Program</h3>
+                  </div>
+                  <p className="text-green-100 text-sm mb-4">
+                    Earn <strong>50 coins</strong> for every person who joins Feed using your link!
                   </p>
-                </div>
-
-                {referral?.code ? (
-                  <div className="space-y-3">
-                    <div className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-4 space-y-3">
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium mb-1.5">Your Sharing Link</p>
-                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#15202b] p-3 rounded-xl border border-gray-100 dark:border-[#38444d]">
-                          <Link2 size={16} className="text-gray-400 flex-shrink-0" />
-                          <p className="text-xs text-gray-700 dark:text-gray-300 truncate select-all flex-grow font-mono">{referral.link}</p>
-                          <button onClick={copyReferral} className="p-1 text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition">
-                            <Copy size={16} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="text-center pt-1">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Referral Code</span>
-                        <p className="text-xl font-black text-gray-900 dark:text-white tracking-widest mt-0.5 font-mono">{referral.code}</p>
-                      </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white/20 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-extrabold">{referral?.count || 0}</p>
+                      <p className="text-green-100 text-xs mt-0.5">Referrals</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <StatCard label="Total Referred Users" value={referral?.totalReferred || 0} icon={Users} color="bg-indigo-600" sub="Successful registrations" />
-                      <StatCard label="Coins Gained" value={referral?.totalEarnings || 0} icon={Coins} color="bg-amber-500" sub="From invitations" />
+                    <div className="bg-white/20 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-extrabold">{referral?.earnings || 0}</p>
+                      <p className="text-green-100 text-xs mt-0.5">Coins Earned</p>
+                    </div>
+                    <div className="bg-white/20 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-extrabold">50</p>
+                      <p className="text-green-100 text-xs mt-0.5">Per Referral</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-white dark:bg-[#1e2732] border border-gray-100 dark:border-[#38444d] rounded-2xl p-8 text-center space-y-3">
-                    <Gift size={40} className="mx-auto text-indigo-500 opacity-60" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">Activate Referral System</h4>
-                      <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">You haven't generated a distribution code yet. Click below to spin up your affiliate network link.</p>
+                </div>
+
+                {referral?.link ? (
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] p-4">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 block uppercase tracking-wide">Your Referral Link</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-gray-50 dark:bg-[#15202b] border border-gray-200 dark:border-[#38444d] rounded-xl px-3 py-2 text-xs text-gray-600 dark:text-gray-400 truncate">
+                        {referral.link}
+                      </div>
+                      <button
+                        onClick={copyReferral}
+                        className="flex-shrink-0 bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition"
+                      >
+                        <Copy size={15} />
+                      </button>
                     </div>
-                    <button onClick={generateCode} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-indigo-700 transition shadow-sm">
-                      Generate Invite Link
-                    </button>
+                    <p className="text-xs text-gray-400 mt-2">Code: <strong className="text-gray-700 dark:text-gray-300">{referral.code}</strong></p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generateCode}
+                    className="w-full bg-green-600 text-white py-3 rounded-2xl font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"
+                  >
+                    <Link2 size={16} /> Generate Referral Link
+                  </button>
+                )}
+
+                {/* Referred users */}
+                {(referral?.referredUsers || []).length > 0 && (
+                  <div className="bg-white dark:bg-[#1e2732] rounded-2xl border border-gray-100 dark:border-[#38444d] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-[#38444d]">
+                      <h3 className="font-bold text-gray-900 dark:text-white text-sm">People You Referred</h3>
+                    </div>
+                    {referral.referredUsers.slice(0, 10).map((u, i) => (
+                      <div key={u._id || i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-[#253341] last:border-0">
+                        <img
+                          src={u.avatar || `https://ui-avatars.com/api/?name=${u.username}&background=2563eb&color=fff`}
+                          className="w-8 h-8 rounded-full object-cover"
+                          alt={u.username}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{u.name || u.username}</p>
+                          <p className="text-xs text-gray-400">Joined {new Date(u.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <span className="text-xs font-bold text-green-600">+50🪙</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
