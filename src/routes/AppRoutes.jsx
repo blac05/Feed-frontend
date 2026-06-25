@@ -1,6 +1,16 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { Search, Home as HomeIcon, Wallet as WalletIcon, ShoppingBag, Radio, BarChart2, Newspaper as NewspaperIcon } from "lucide-react";
+import { 
+  Search, 
+  Home as HomeIcon, 
+  Wallet as WalletIcon, 
+  ShoppingBag, 
+  Radio, 
+  BarChart2, 
+  Newspaper as NewspaperIcon,
+  Volume2,
+  Flame 
+} from "lucide-react";
 
 // Auth
 import Landing from "../pages/Landing";
@@ -15,7 +25,7 @@ import Home from "../pages/Home";
 import Headlines from "../pages/Headlines";
 import Explore from "../pages/Explore";
 import Profile from "../pages/Profile";
-import PostDetail from "../pages/PostDetail";
+import PostDetail padding from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
 import Bookmarks from "../pages/Bookmarks";
 import Notifications from "../pages/Notifications";
@@ -34,7 +44,7 @@ import Wallet from "../pages/Wallet";
 import AdminDashboard from "../pages/AdminDashboard";
 import CreatorDashboard from "../pages/CreatorDashboard";
 
-// Coming soon stubs
+// Coming soon stubs / Implementations
 import ForYou from "../pages/ForYou";
 import Chat from "../pages/Chat";
 import GroupChat from "../pages/GroupChat";
@@ -43,9 +53,8 @@ import Stories from "../pages/Stories";
 import Podcasts from "../pages/Podcasts";
 import PodcastPlayer from "../pages/PodcastPlayer";
 import AudioSpaces from "../pages/AudioSpaces";
-import SpaceRoom from "../pages/SpaceRoom";
 import EventsHub from "../pages/EventsHub";
-import TicketCheckout = "../pages/TicketCheckout";
+import TicketCheckout from "../pages/TicketCheckout"; // Fixed assignment syntax error
 import Checkout from "../pages/Checkout";
 import CreatorStore from "../pages/CreatorStore";
 import Sponsorships from "../pages/Sponsorships";
@@ -75,7 +84,8 @@ function CommandPalette() {
 
   const links = [
     { name: "Home Feed", url: "/home", icon: <HomeIcon size={15} /> },
-    { name: "Headlines", url: "/headlines", icon: <NewspaperIcon size={15} /> },
+    { name: "Headlines Feed", url: "/headlines", icon: <Flame size={15} /> },
+    { name: "Audio Spaces", url: "/audio-spaces", icon: <Volume2 size={15} /> },
     { name: "Creator Dashboard", url: "/creator-dashboard", icon: <BarChart2 size={15} /> },
     { name: "Wallet & Balance", url: "/wallet", icon: <WalletIcon size={15} /> },
     { name: "Marketplace", url: "/marketplace", icon: <ShoppingBag size={15} /> },
@@ -167,10 +177,7 @@ export default function AppRoutes() {
         {/* Streaming */}
         <Route path="/live" element={<Live />} />
         <Route path="/live/:id" element={<Live />} />
-        <Route path="/podcasts" element={<Podcasts />} />
-        <Route path="/podcast/:id" element={<PodcastPlayer />} />
         <Route path="/audio-spaces" element={<AudioSpaces />} />
-        <Route path="/space/:id" element={<SpaceRoom />} />
 
         {/* Events */}
         <Route path="/events" element={<Events />} />
