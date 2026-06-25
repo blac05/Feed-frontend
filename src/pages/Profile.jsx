@@ -1,10 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  MapPin, Link2, Camera, Grid3X3, Bookmark,
-  Calendar, CheckCircle, ArrowLeft, X, Edit3,
-  Heart, MessageCircle
-} from "lucide-react";
+import { Heart, Bookmark, MessageCircle } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";

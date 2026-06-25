@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Wallet as WalletIcon, Plus, ArrowUpRight, ArrowDownLeft,
-  Coins, TrendingUp, Gift, CreditCard, X, CheckCircle,
-  Clock, AlertCircle, Shield, Landmark, Smartphone, RefreshCw
-} from "lucide-react";
+import { Heart, Bookmark, MessageCircle } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";

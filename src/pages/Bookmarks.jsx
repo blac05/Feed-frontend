@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, ArrowLeft, Heart, MessageCircle } from "lucide-react";
+import { Heart, Bookmark, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useToast } from "../context/ToastContext";
