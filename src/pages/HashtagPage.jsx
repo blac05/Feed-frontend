@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Hash, TrendingUp, CheckCircle, MessageCircle } from "lucide-react";
+import { 
+  ArrowLeft, Hash, TrendingUp, CheckCircle, MessageCircle, 
+  Heart, Repeat2, Share2, Bookmark 
+} from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
