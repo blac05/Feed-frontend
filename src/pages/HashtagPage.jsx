@@ -9,7 +9,6 @@ import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import ReactionPicker from "../components/feed/ReactionPicker";
-import { Heart, MessageCircle, Repeat2, Share2, Bookmark } from "lucide-react";
 
 const badgeColor = {
   personal: "text-blue-500",
