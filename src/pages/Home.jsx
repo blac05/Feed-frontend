@@ -2,21 +2,24 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Image, Video, Smile, MessageCircle,
+  Image, Video as VideoIcon, Smile, MessageCircle,
   Repeat2, Share2, MoreHorizontal, CheckCircle,
   X, Trash2, Flag, Link, Bookmark, BarChart2, Quote, Radio,
-  Sparkles // Added Sparkles icon
+  Sparkles, Flame
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useSocket } from "../context/SocketContext"; 
 import useUpload from "../hooks/useUpload";
 import StoriesBar from "../components/stories/StoriesBar";
 import ReactionPicker from "../components/feed/ReactionPicker";
 import QuotePost from "../components/feed/QuotePost";
 import PollCard from "../components/feed/PollCard";
 import CreatePoll from "../components/feed/CreatePoll";
-import AIComposer from "../components/feed/AIComposer"; // Added AIComposer import
+import AIComposer from "../components/feed/AIComposer"; 
+import ReportModal from "../components/moderation/ReportModal";
+import SubscribeButton from "../components/subscriptions/SubscribeButton"; // Added SubscribeButton import
 
 const badgeColor = {
   personal: "text-blue-500",
@@ -164,6 +167,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showQuote, setShowQuote] = useState(false);
   const [showQuoteInput, setShowQuoteInput] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localPost, setLocalPost] = useState(post);
@@ -259,6 +263,13 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               <span className="text-gray-400 dark:text-gray-500 text-sm">@{localPost.author?.username}</span>
               <span className="text-gray-300 dark:text-gray-600 text-sm">·</span>
               <span className="text-gray-400 dark:text-gray-500 text-xs">{timeAgo(localPost.createdAt)}</span>
+              
+              {/* Subscribe Button (integrated contextually) */}
+              {!isOwn && (
+                <div className="ml-2 scale-90 origin-left">
+                  <SubscribeButton creatorId={localPost.author?._id} />
+                </div>
+              )}
             </div>
 
             <div className="relative" ref={menuRef}>
@@ -293,7 +304,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
                     )}
                     {!isOwn && (
                       <button
-                        onClick={() => { toast({ message: "Post reported", type: "info" }); setShowMenu(false); }}
+                        onClick={() => { setShowReport(true); setShowMenu(false); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#253341] transition"
                       >
                         <Flag size={14} /> Report post
@@ -304,6 +315,13 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               </AnimatePresence>
             </div>
           </div>
+
+          {/* Karma Metric Segment */}
+          {localPost.author?.karma > 0 && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-orange-500 font-bold">🏆 {localPost.author.karma?.toLocaleString()} karma</span>
+            </div>
+          )}
 
           <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mt-1 whitespace-pre-wrap">
             {localPost.content.split(/(\s+)/).map((word, i) => {
@@ -328,6 +346,16 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
               src={localPost.image}
               className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100 dark:border-[#38444d]"
               alt="post"
+            />
+          )}
+
+          {localPost.video && (
+            <video
+              src={localPost.video}
+              className="mt-3 rounded-2xl w-full object-cover max-h-96 border border-gray-100 dark:border-[#38444d]"
+              controls
+              preload="metadata"
+              playsInline
             />
           )}
 
@@ -456,7 +484,7 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
                     onChange={e => setComment(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && submitComment()}
                     placeholder="Write a comment..."
-                    className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 bg-gray-100 dark:bg-[#1e2732] text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
                   />
                   <button
                     onClick={submitComment}
@@ -471,16 +499,25 @@ function PostCard({ post, onDelete, onReact, currentUserId }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {showReport && (
+        <ReportModal
+          post={localPost}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </motion.div>
   );
 }
 
-const tabs = ["For You", "Following", "News", "Trending"];
+const tabs = ["For You", "Following", "Headlines", "Trending"];
 
 export default function Home() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { uploadImage, uploading: uploadingImage } = useUpload();
+  const { pushEnabled, requestPush } = useSocket(); 
+  const { uploadImage, uploadVideo, uploading: uploadingImage, progress: uploadProgress } = useUpload();
 
   // ==========================================
   // FEED PAGINATION STATE & REFS
@@ -496,13 +533,17 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("For You");
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [pollData, setPollData] = useState(null);
   const [showPoll, setShowPoll] = useState(false);
-  const [showAI, setShowAI] = useState(false); // Added state for AI panel toggle
+  const [showAI, setShowAI] = useState(false); 
   
   const fileRef = useRef();
   const textRef = useRef();
+  const videoRef = useRef();
+  const videoInputRef = useRef();
   const observerRef = useRef(null);
   const sentinelRef = useRef(null);
 
@@ -514,6 +555,18 @@ export default function Home() {
     else setLoadingMore(true);
 
     try {
+      if (activeTab === "Headlines") {
+        const res = await api.get(`/posts/headlines/hot?page=${pageNum}&limit=10`);
+        const newPosts = res.data.posts || [];
+        if (reset || pageNum === 1) setPosts(newPosts);
+        else setPosts(prev => {
+          const ids = new Set(prev.map(p => p._id));
+          return [...prev, ...newPosts.filter(p => !ids.has(p._id))];
+        });
+        setHasMore(res.data.hasMore ?? false);
+        return;
+      }
+
       let endpoint = `/posts?page=${pageNum}&limit=15`;
       if (activeTab === "Following") endpoint = `/posts/following?page=${pageNum}&limit=15`;
       if (activeTab === "News") endpoint = `/posts/news?page=${pageNum}&limit=15`;
@@ -547,7 +600,6 @@ export default function Home() {
   // ==========================================
   // EFFECT LIFECYCLES
   // ==========================================
-
   useEffect(() => {
     setPage(1);
     setHasMore(true);
@@ -584,15 +636,33 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handleVideo = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ message: "Video must be under 100MB", type: "error" });
+      return;
+    }
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+    setImage(null);
+    setImageFile(null);
+  };
+
   const submit = async () => {
     if (!text.trim()) return;
     setPosting(true);
     try {
       let imageUrl = null;
-      if (imageFile) {
+      let videoUrl = null;
+
+      if (videoFile) {
+        videoUrl = await uploadVideo(videoFile);
+      } else if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
-      const payload = { content: text, image: imageUrl };
+
+      const payload = { content: text, image: imageUrl, video: videoUrl };
       if (pollData) payload.poll = pollData;
       
       const res = await api.post("/posts", payload);
@@ -600,6 +670,8 @@ export default function Home() {
       setText("");
       setImage(null);
       setImageFile(null);
+      setVideoFile(null);
+      setVideoPreview(null);
       setPollData(null);
       setShowPoll(false);
       setShowAI(false);
@@ -644,6 +716,36 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        {/* Global Push Notification Banner Segment */}
+        {!pushEnabled && (
+          <div className="bg-blue-50/60 dark:bg-blue-950/20 border-t border-gray-100 dark:border-[#38444d] px-4 py-2.5 flex items-center justify-between gap-4 transition-all">
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-medium leading-tight">
+              Get real-time updates when someone replies, reacts, or reposts your content.
+            </p>
+            <button
+              onClick={requestPush}
+              className="flex-shrink-0 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-full shadow-sm transition active:scale-95"
+            >
+              🔔 Enable Push
+            </button>
+          </div>
+        )}
+
+        {activeTab === "Headlines" && (
+          <div className="bg-orange-50 dark:bg-orange-900/10 border-b border-orange-100 dark:border-orange-900/30 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-orange-500" />
+              <span className="text-xs font-bold text-orange-600 dark:text-orange-400">Showing Hot Headlines</span>
+            </div>
+            <button
+              onClick={() => navigate("/headlines")}
+              className="text-xs text-orange-500 font-bold hover:underline"
+            >
+              Full feed →
+            </button>
+          </div>
+        )}
       </div>
 
       <StoriesBar />
@@ -685,6 +787,28 @@ export default function Home() {
               </div>
             )}
 
+            {videoPreview && (
+              <div className="relative mt-2">
+                <video
+                  src={videoPreview}
+                  className="rounded-2xl w-full max-h-60 object-cover border border-gray-100 dark:border-[#38444d]"
+                  controls
+                />
+                <button
+                  onClick={() => { setVideoFile(null); setVideoPreview(null); }}
+                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition"
+                >
+                  <X size={14} />
+                </button>
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/30 rounded-2xl flex flex-col items-center justify-center gap-2">
+                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="text-white text-xs font-bold">{uploadProgress}%</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <AnimatePresence>
               {showPoll && (
                 <CreatePoll
@@ -707,9 +831,12 @@ export default function Home() {
                       <Image size={18} />
                       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
                     </label>
-                    <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
-                      <Video size={18} />
-                    </button>
+
+                    <label className="flex items-center gap-1.5 text-blue-500 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition cursor-pointer">
+                      <VideoIcon size={18} />
+                      <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideo} />
+                    </label>
+
                     <button className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2.5 py-1.5 rounded-full transition">
                       <Smile size={18} />
                     </button>
@@ -720,7 +847,6 @@ export default function Home() {
                       <BarChart2 size={18} />
                     </button>
 
-                    {/* Integrated AI Assistant Toggle Plugin */}
                     <div className="relative">
                       <button
                         onClick={() => setShowAI(!showAI)}

@@ -25,7 +25,6 @@ import Home from "../pages/Home";
 import Headlines from "../pages/Headlines";
 import Explore from "../pages/Explore";
 import Profile from "../pages/Profile";
-import PostDetail from "../pages/PostDetail";
 import HashtagPage from "../pages/HashtagPage";
 import Bookmarks from "../pages/Bookmarks";
 import Notifications from "../pages/Notifications";
@@ -54,7 +53,7 @@ import Podcasts from "../pages/Podcasts";
 import PodcastPlayer from "../pages/PodcastPlayer";
 import AudioSpaces from "../pages/AudioSpaces";
 import EventsHub from "../pages/EventsHub";
-import TicketCheckout from "../pages/TicketCheckout";
+import TicketCheckout from "../pages/TicketCheckout"; // Fixed assignment syntax error
 import Checkout from "../pages/Checkout";
 import CreatorStore from "../pages/CreatorStore";
 import Sponsorships from "../pages/Sponsorships";
@@ -177,8 +176,6 @@ export default function AppRoutes() {
         {/* Streaming */}
         <Route path="/live" element={<Live />} />
         <Route path="/live/:id" element={<Live />} />
-        <Route path="/podcasts" element={<Podcasts />} />
-        <Route path="/podcast/:id" element={<PodcastPlayer />} />
         <Route path="/audio-spaces" element={<AudioSpaces />} />
 
         {/* Events */}
