@@ -1,6 +1,19 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Bookmark, MessageCircle } from "lucide-react";
+import { 
+  Heart, 
+  Bookmark, 
+  MessageCircle,
+  ArrowLeft,      // Added missing import
+  Camera,         // Added missing import
+  Edit3,          // Added missing import
+  CheckCircle,    // Added missing import
+  MapPin,         // Added missing import
+  Link2,          // Added missing import
+  Calendar,       // Added missing import
+  Grid3X3,        // Added missing import
+  X               // Added missing import
+} from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -81,7 +94,7 @@ export default function Profile() {
         .then(res => setBookmarks(res.data.bookmarks || []))
         .catch(() => {});
     }
-  }, [id]);
+  }, [id, isOwnProfile, authUser?._id]); // Stable layout dependency hook updates
 
   const handleFollow = async () => {
     try {
@@ -166,9 +179,7 @@ export default function Profile() {
 
   const joinedDate = new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const imagePosts = posts.filter(p => p.image);
-  const tabs = isOwnProfile
-    ? ["grid", "posts", "saved"]
-    : ["grid", "posts"];
+  const tabs = isOwnProfile ? ["grid", "posts", "saved"] : ["grid", "posts"];
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#15202b]">
@@ -311,7 +322,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* ✅ Photo Grid Tab — Instagram style */}
+      {/* Photo Grid Tab */}
       {tab === "grid" && (
         imagePosts.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -335,7 +346,6 @@ export default function Profile() {
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                   alt="post"
                 />
-                {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4">
                   <span className="text-white font-bold text-sm flex items-center gap-1">
                     <Heart size={16} className="fill-white" /> {post.likes?.length || 0}
@@ -378,7 +388,7 @@ export default function Profile() {
         )
       )}
 
-      {/* ✅ Saved/Bookmarks Tab */}
+      {/* Saved/Bookmarks Tab */}
       {tab === "saved" && (
         bookmarks.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -480,4 +490,3 @@ export default function Profile() {
     </div>
   );
 }
-

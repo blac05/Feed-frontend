@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, Bookmark, MessageCircle } from "lucide-react";
+import { Heart, Bookmark, MessageCircle, ArrowLeft } from "lucide-react"; // Added missing ArrowLeft import
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useToast } from "../context/ToastContext";
@@ -16,7 +16,7 @@ export default function Bookmarks() {
       .then(res => setBookmarks(res.data.bookmarks || []))
       .catch(() => toast({ message: "Failed to load bookmarks", type: "error" }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [toast]); // Added stable toast dependency hook update
 
   const handleUnbookmark = async (postId, e) => {
     e.stopPropagation();
@@ -39,6 +39,7 @@ export default function Bookmarks() {
 
   return (
     <div className="min-h-screen dark:bg-[#15202b]">
+      {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-[#15202b]/90 backdrop-blur-md border-b border-gray-100 dark:border-[#38444d] px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#1e2732] transition">
           <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
@@ -52,6 +53,7 @@ export default function Bookmarks() {
         )}
       </div>
 
+      {/* Main Content View */}
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />

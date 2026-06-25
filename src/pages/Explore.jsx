@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Bookmark, MessageCircle } from "lucide-react";
+// Added missing icon imports: Search, X, CheckCircle, Hash, TrendingUp, Users, Repeat2
+import { Heart, Bookmark, MessageCircle, Search, X, CheckCircle, Hash, TrendingUp, Users, Repeat2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useToast } from "../context/ToastContext";
-import { useSocket } from "../context/SocketContext"; // Added for live connection indicators
+import { useSocket } from "../context/SocketContext";
 
 const trendingTopics = [
   { tag: "Technology", posts: "125K", category: "Technology" },
@@ -38,7 +39,7 @@ const suggestedUsers = [
 
 export default function Explore() {
   const { toast } = useToast();
-  const { isOnline } = useSocket(); // Socket connection state line
+  const { isOnline } = useSocket();
   const navigate = useNavigate();
 
   // ==========================================
@@ -62,12 +63,10 @@ export default function Explore() {
   // CORE DATA LIFECYCLE HYDRATION
   // ==========================================
   useEffect(() => {
-    // Load standard post registries
     api.get("/posts")
       .then(res => setPosts(res.data.posts || []))
       .catch(() => {});
 
-    // Hydrate system with real trending hashtags or configuration static fallback
     api.get("/posts/trending-hashtags")
       .then(res => {
         if (res.data.hashtags?.length > 0) {
@@ -103,22 +102,19 @@ export default function Explore() {
           api.get("/communities"),
         ]);
 
-        if (!isCurrent) return; // Drop stale asynchronous task callbacks
+        if (!isCurrent) return;
 
-        // 1. Filter Posts
         const filteredPosts = (postsRes.data.posts || []).filter(p =>
           p.content?.toLowerCase().includes(query.toLowerCase()) ||
           p.author?.username?.toLowerCase().includes(query.toLowerCase()) ||
           p.author?.name?.toLowerCase().includes(query.toLowerCase())
         );
 
-        // 2. Filter Communities
         const filteredCommunities = (communitiesRes.data.communities || []).filter(c =>
           c.name?.toLowerCase().includes(query.toLowerCase()) ||
           c.description?.toLowerCase().includes(query.toLowerCase())
         );
 
-        // 3. Extract Distinct Top Hashtag Sub-strings from Filtered Posts
         const hashtagMatches = [...new Set(
           filteredPosts.flatMap(p => p.tags || [])
             .filter(t => t.toLowerCase().includes(query.toLowerCase().replace("#", "")))
@@ -240,7 +236,6 @@ export default function Explore() {
                           onClick={() => navigate(`/profile/${u._id}`)}
                           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/60 dark:hover:bg-[#1e2732]/40 transition cursor-pointer"
                         >
-                          {/* Avatar Element with Contextual Socket State Indicators */}
                           <div className="relative flex-shrink-0">
                             <img
                               src={u.avatar || `https://ui-avatars.com/api/?name=${u.username}&background=2563eb&color=fff`}
@@ -257,8 +252,8 @@ export default function Explore() {
                               <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
                                 {u.name || u.username}
                               </p>
-                              {u.isVerified && (
-                                <CheckCircle size={13} className={`${badgeColor[u.accountType] || "text-blue-500"} fill-current`} />
+                              {(u.isVerified || u.verified) && (
+                                <CheckCircle size={13} className={`${badgeColor[u.accountType || u.type] || "text-blue-500"} fill-current`} />
                               )}
                             </div>
                             <p className="text-xs text-gray-400">@{u.username}</p>
@@ -279,7 +274,7 @@ export default function Explore() {
                     </div>
                   )}
 
-                  {/* Category B: Hashtag Matching Tokens */}
+                  {/* Category B: Hashtags */}
                   {hashtags.length > 0 && (
                     <div>
                       <p className="px-4 py-2.5 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-[#1e2732]/30">
@@ -306,7 +301,7 @@ export default function Explore() {
                     </div>
                   )}
 
-                  {/* Category C: Communities Registries */}
+                  {/* Category C: Communities */}
                   {communities.length > 0 && (
                     <div>
                       <p className="px-4 py-2.5 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-[#1e2732]/30">
@@ -333,7 +328,7 @@ export default function Explore() {
                     </div>
                   )}
 
-                  {/* Category D: Post Content Matrices */}
+                  {/* Category D: Posts */}
                   {searchResults.length > 0 && (
                     <div>
                       <p className="px-4 py-2.5 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-[#1e2732]/30">
@@ -345,6 +340,7 @@ export default function Explore() {
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.02 }}
+                          onClick={() => navigate(`/post/${post._id}`)}
                           className="flex gap-3 px-4 py-3.5 hover:bg-gray-50/40 dark:hover:bg-[#1e2732]/40 cursor-pointer transition"
                         >
                           <img
@@ -357,8 +353,8 @@ export default function Explore() {
                               <span className="font-bold text-xs text-gray-900 dark:text-white">
                                 {post.author?.name || post.author?.username}
                               </span>
-                              {post.author?.isVerified && (
-                                <CheckCircle size={12} className={`${badgeColor[post.author?.accountType] || "text-blue-500"} fill-current`} />
+                              {(post.author?.isVerified || post.author?.verified) && (
+                                <CheckCircle size={12} className={`${badgeColor[post.author?.accountType || post.author?.type] || "text-blue-500"} fill-current`} />
                               )}
                               <span className="text-gray-400 text-xs">@{post.author?.username}</span>
                               <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
@@ -388,7 +384,7 @@ export default function Explore() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {/* Animated Tab Bar Routing Selector */}
+              {/* Tab Bar Container */}
               <div className="flex overflow-x-auto border-b border-gray-100 dark:border-[#38444d] bg-white dark:bg-[#15202b] sticky top-[57px] z-10 scrollbar-none">
                 {tabs.map(tab => {
                   const isActive = activeTab === tab;
@@ -413,7 +409,7 @@ export default function Explore() {
                 })}
               </div>
 
-              {/* Real and Aggregated Trending Matrix Block */}
+              {/* Trending Blocks Section */}
               <div className="border-b border-gray-100 dark:border-[#38444d]">
                 <div className="px-4 py-3 flex items-center gap-2 border-b border-gray-50 dark:border-[#38444d]/30">
                   <TrendingUp size={15} className="text-blue-500" />
@@ -442,7 +438,7 @@ export default function Explore() {
                 </button>
               </div>
 
-              {/* Recommended Profiles Registry Block */}
+              {/* Recommended Profiles section */}
               <div className="border-b border-gray-100 dark:border-[#38444d]">
                 <div className="px-4 py-3 flex items-center gap-2 border-b border-gray-50 dark:border-[#38444d]/30">
                   <Users size={15} className="text-blue-500" />
@@ -463,7 +459,7 @@ export default function Explore() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1">
                           <p className="font-bold text-xs text-gray-900 dark:text-white truncate">{u.name}</p>
-                          {u.verified && <CheckCircle size={12} className={`${badgeColor[u.type]} fill-current`} />}
+                          {(u.verified || u.isVerified) && <CheckCircle size={12} className={`${badgeColor[u.type || u.accountType]} fill-current`} />}
                         </div>
                         <p className="text-[11px] text-gray-400">@{u.username}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{u.bio}</p>
@@ -486,7 +482,7 @@ export default function Explore() {
                 </button>
               </div>
 
-              {/* Standard Timeline Feed Dispatches Block */}
+              {/* Timeline Feed Container */}
               <div>
                 <div className="px-4 py-3.5 border-b border-gray-50 dark:border-[#38444d]/40">
                   <h2 className="font-bold text-sm text-gray-900 dark:text-white">Latest Activity Matrix</h2>
@@ -500,6 +496,7 @@ export default function Explore() {
                   tabPosts.map((post, i) => (
                     <div
                       key={post._id || i}
+                      onClick={() => navigate(`/post/${post._id}`)}
                       className="flex gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-[#38444d] hover:bg-gray-50/30 dark:hover:bg-[#1e2732]/20 transition cursor-pointer"
                     >
                       <div className="relative flex-shrink-0">
@@ -518,8 +515,8 @@ export default function Explore() {
                           <span className="font-bold text-xs text-gray-900 dark:text-white">
                             {post.author?.name || post.author?.username}
                           </span>
-                          {post.author?.isVerified && (
-                            <CheckCircle size={12} className={`${badgeColor[post.author?.accountType] || "text-blue-500"} fill-current`} />
+                          {(post.author?.isVerified || post.author?.verified) && (
+                            <CheckCircle size={12} className={`${badgeColor[post.author?.accountType || post.author?.type] || "text-blue-500"} fill-current`} />
                           )}
                           <span className="text-gray-400 text-[11px]">@{post.author?.username}</span>
                           <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
@@ -534,13 +531,22 @@ export default function Explore() {
                           />
                         )}
                         <div className="flex items-center gap-5 mt-3 text-gray-400 dark:text-gray-500 text-[11px] font-semibold select-none">
-                          <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
+                          <button 
+                            onClick={e => { e.stopPropagation(); }} 
+                            className="flex items-center gap-1 hover:text-red-500 transition-colors"
+                          >
                             <Heart size={13} /> {post.likes?.length || 0}
                           </button>
-                          <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                          <button 
+                            onClick={e => { e.stopPropagation(); }} 
+                            className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+                          >
                             <MessageCircle size={13} /> {post.comments?.length || 0}
                           </button>
-                          <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
+                          <button 
+                            onClick={e => { e.stopPropagation(); }} 
+                            className="flex items-center gap-1 hover:text-green-500 transition-colors"
+                          >
                             <Repeat2 size={13} /> {post.reposts?.length || 0}
                           </button>
                         </div>
